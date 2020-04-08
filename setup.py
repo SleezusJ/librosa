@@ -25,6 +25,7 @@ setup(
         "License :: OSI Approved :: ISC License (ISCL)",
         "Programming Language :: Python",
         "Development Status :: 3 - Alpha",
+        "Framework :: Matplotlib",
         "Intended Audience :: Developers",
         "Topic :: Multimedia :: Sound/Audio :: Analysis",
         "Programming Language :: Python :: 3",
