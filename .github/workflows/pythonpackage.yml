@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.5, 3.6, 3.7, 3.8]
+        python-version: [3.6, 3.7, 3.8]
 
     steps:
     - uses: actions/checkout@v2
@@ -29,7 +29,7 @@ jobs:
         pip install -r requirements.txt
     - name: Format with Python Black
       run: |
-        pip3 install black
+        pip install black
         # Show the diff of formatting with black without actually running it.
         black . --check
 #    - name: Lint with flake8
