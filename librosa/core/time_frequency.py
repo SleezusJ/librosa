@@ -1,30 +1,40 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Time and frequency utilities'''
+"""Time and frequency utilities"""
 
 import re
 import numpy as np
 from ..util.exceptions import ParameterError
 
-__all__ = ['frames_to_samples', 'frames_to_time',
-           'samples_to_frames', 'samples_to_time',
-           'time_to_samples', 'time_to_frames',
-           'blocks_to_samples', 'blocks_to_frames',
-           'blocks_to_time',
-           'note_to_hz', 'note_to_midi',
-           'midi_to_hz', 'midi_to_note',
-           'hz_to_note', 'hz_to_midi',
-           'hz_to_mel', 'hz_to_octs',
-           'mel_to_hz',
-           'octs_to_hz',
-           'fft_frequencies',
-           'cqt_frequencies',
-           'mel_frequencies',
-           'tempo_frequencies',
-           'fourier_tempo_frequencies',
-           'A_weighting',
-           'samples_like',
-           'times_like']
+__all__ = [
+    "frames_to_samples",
+    "frames_to_time",
+    "samples_to_frames",
+    "samples_to_time",
+    "time_to_samples",
+    "time_to_frames",
+    "blocks_to_samples",
+    "blocks_to_frames",
+    "blocks_to_time",
+    "note_to_hz",
+    "note_to_midi",
+    "midi_to_hz",
+    "midi_to_note",
+    "hz_to_note",
+    "hz_to_midi",
+    "hz_to_mel",
+    "hz_to_octs",
+    "mel_to_hz",
+    "octs_to_hz",
+    "fft_frequencies",
+    "cqt_frequencies",
+    "mel_frequencies",
+    "tempo_frequencies",
+    "fourier_tempo_frequencies",
+    "A_weighting",
+    "samples_like",
+    "times_like",
+]
 
 
 def frames_to_samples(frames, hop_length=512, n_fft=None):
@@ -155,9 +165,7 @@ def frames_to_time(frames, sr=22050, hop_length=512, n_fft=None):
     >>> beat_times = librosa.frames_to_time(beats, sr=sr)
     """
 
-    samples = frames_to_samples(frames,
-                                hop_length=hop_length,
-                                n_fft=n_fft)
+    samples = frames_to_samples(frames, hop_length=hop_length, n_fft=n_fft)
 
     return samples_to_time(samples, sr=sr)
 
@@ -210,7 +218,7 @@ def time_to_frames(times, sr=22050, hop_length=512, n_fft=None):
 
 
 def time_to_samples(times, sr=22050):
-    '''Convert timestamps (in seconds) to sample indices.
+    """Convert timestamps (in seconds) to sample indices.
 
     Parameters
     ----------
@@ -236,13 +244,13 @@ def time_to_samples(times, sr=22050):
     array([    0,  2205,  4410,  6615,  8820, 11025, 13230, 15435,
            17640, 19845])
 
-    '''
+    """
 
     return (np.asanyarray(times) * sr).astype(int)
 
 
 def samples_to_time(samples, sr=22050):
-    '''Convert sample indices to time (in seconds).
+    """Convert sample indices to time (in seconds).
 
     Parameters
     ----------
@@ -274,13 +282,13 @@ def samples_to_time(samples, sr=22050):
             0.65 ,  0.673,  0.697,  0.72 ,  0.743,  0.766,  0.789,
             0.813,  0.836,  0.859,  0.882,  0.906,  0.929,  0.952,
             0.975,  0.998])
-    '''
+    """
 
     return np.asanyarray(samples) / float(sr)
 
 
 def blocks_to_frames(blocks, block_length):
-    '''Convert block indices to frame indices
+    """Convert block indices to frame indices
 
     Parameters
     ----------
@@ -312,12 +320,12 @@ def blocks_to_frames(blocks, block_length):
     >>> for n, y in enumerate(stream):
     ...     n_frame = librosa.blocks_to_frames(n, block_length=16)
 
-    '''
+    """
     return block_length * np.asanyarray(blocks)
 
 
 def blocks_to_samples(blocks, block_length, hop_length):
-    '''Convert block indices to sample indices
+    """Convert block indices to sample indices
 
     Parameters
     ----------
@@ -356,13 +364,13 @@ def blocks_to_samples(blocks, block_length, hop_length):
     ...     n_sample = librosa.blocks_to_samples(n, block_length=16,
     ...                                          hop_length=512)
 
-    '''
+    """
     frames = blocks_to_frames(blocks, block_length)
     return frames_to_samples(frames, hop_length=hop_length)
 
 
 def blocks_to_time(blocks, block_length, hop_length, sr):
-    '''Convert block indices to time (in seconds)
+    """Convert block indices to time (in seconds)
 
     Parameters
     ----------
@@ -404,13 +412,13 @@ def blocks_to_time(blocks, block_length, hop_length, sr):
     ...     n_time = librosa.blocks_to_time(n, block_length=16,
     ...                                     hop_length=512, sr=sr)
 
-    '''
+    """
     samples = blocks_to_samples(blocks, block_length, hop_length)
     return samples_to_time(samples, sr=sr)
 
 
 def note_to_hz(note, **kwargs):
-    '''Convert one or more note names to frequency (Hz)
+    """Convert one or more note names to frequency (Hz)
 
     Examples
     --------
@@ -442,12 +450,12 @@ def note_to_hz(note, **kwargs):
     midi_to_hz
     note_to_midi
     hz_to_note
-    '''
+    """
     return midi_to_hz(note_to_midi(note, **kwargs))
 
 
 def note_to_midi(note, round_midi=True):
-    '''Convert one or more spelled notes to MIDI number(s).
+    """Convert one or more spelled notes to MIDI number(s).
 
     Notes may be spelled out with optional accidentals or octave numbers.
 
@@ -495,26 +503,28 @@ def note_to_midi(note, round_midi=True):
     >>> librosa.note_to_midi(['C', 'E', 'G'])
     array([12, 16, 19])
 
-    '''
+    """
 
     if not isinstance(note, str):
         return np.array([note_to_midi(n, round_midi=round_midi) for n in note])
 
-    pitch_map = {'C': 0, 'D': 2, 'E': 4, 'F': 5, 'G': 7, 'A': 9, 'B': 11}
-    acc_map = {'#': 1, '': 0, 'b': -1, '!': -1}
+    pitch_map = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+    acc_map = {"#": 1, "": 0, "b": -1, "!": -1}
 
-    match = re.match(r'^(?P<note>[A-Ga-g])'
-                     r'(?P<accidental>[#b!]*)'
-                     r'(?P<octave>[+-]?\d+)?'
-                     r'(?P<cents>[+-]\d+)?$',
-                     note)
+    match = re.match(
+        r"^(?P<note>[A-Ga-g])"
+        r"(?P<accidental>[#b!]*)"
+        r"(?P<octave>[+-]?\d+)?"
+        r"(?P<cents>[+-]\d+)?$",
+        note,
+    )
     if not match:
-        raise ParameterError('Improper note format: {:s}'.format(note))
+        raise ParameterError("Improper note format: {:s}".format(note))
 
-    pitch = match.group('note').upper()
-    offset = np.sum([acc_map[o] for o in match.group('accidental')])
-    octave = match.group('octave')
-    cents = match.group('cents')
+    pitch = match.group("note").upper()
+    offset = np.sum([acc_map[o] for o in match.group("accidental")])
+    octave = match.group("octave")
+    cents = match.group("cents")
 
     if not octave:
         octave = 0
@@ -535,7 +545,7 @@ def note_to_midi(note, round_midi=True):
 
 
 def midi_to_note(midi, octave=True, cents=False):
-    '''Convert one or more MIDI numbers to note strings.
+    """Convert one or more MIDI numbers to note strings.
 
     MIDI numbers will be rounded to the nearest integer.
 
@@ -583,17 +593,15 @@ def midi_to_note(midi, octave=True, cents=False):
     midi_to_hz
     note_to_midi
     hz_to_note
-    '''
+    """
 
     if cents and not octave:
-        raise ParameterError('Cannot encode cents without octave information.')
+        raise ParameterError("Cannot encode cents without octave information.")
 
     if not np.isscalar(midi):
         return [midi_to_note(x, octave=octave, cents=cents) for x in midi]
 
-    note_map = ['C', 'C#', 'D', 'D#',
-                'E', 'F', 'F#', 'G',
-                'G#', 'A', 'A#', 'B']
+    note_map = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
 
     note_num = int(np.round(midi))
     note_cents = int(100 * np.around(midi - note_num, 2))
@@ -601,9 +609,9 @@ def midi_to_note(midi, octave=True, cents=False):
     note = note_map[note_num % 12]
 
     if octave:
-        note = '{:s}{:0d}'.format(note, int(note_num / 12) - 1)
+        note = "{:s}{:0d}".format(note, int(note_num / 12) - 1)
     if cents:
-        note = '{:s}{:+02d}'.format(note, note_cents)
+        note = "{:s}{:+02d}".format(note, note_cents)
 
     return note
 
@@ -637,7 +645,7 @@ def midi_to_hz(notes):
     note_to_hz
     """
 
-    return 440.0 * (2.0 ** ((np.asanyarray(notes) - 69.0)/12.0))
+    return 440.0 * (2.0 ** ((np.asanyarray(notes) - 69.0) / 12.0))
 
 
 def hz_to_midi(frequencies):
@@ -671,7 +679,7 @@ def hz_to_midi(frequencies):
 
 
 def hz_to_note(frequencies, **kwargs):
-    '''Convert one or more frequencies (in Hz) to the nearest note names.
+    """Convert one or more frequencies (in Hz) to the nearest note names.
 
     Parameters
     ----------
@@ -714,7 +722,7 @@ def hz_to_note(frequencies, **kwargs):
     ...                    octave=False)
     ['A', 'A#', 'B', 'C', 'C#', 'D', 'E', 'F', 'F#', 'G', 'G#', 'A']
 
-    '''
+    """
     return midi_to_note(hz_to_midi(frequencies), **kwargs)
 
 
@@ -758,14 +766,14 @@ def hz_to_mel(frequencies, htk=False):
 
     # Fill in the log-scale part
 
-    min_log_hz = 1000.0                         # beginning of log region (Hz)
-    min_log_mel = (min_log_hz - f_min) / f_sp   # same (Mels)
-    logstep = np.log(6.4) / 27.0                # step size for log region
+    min_log_hz = 1000.0  # beginning of log region (Hz)
+    min_log_mel = (min_log_hz - f_min) / f_sp  # same (Mels)
+    logstep = np.log(6.4) / 27.0  # step size for log region
 
     if frequencies.ndim:
         # If we have array data, vectorize
-        log_t = (frequencies >= min_log_hz)
-        mels[log_t] = min_log_mel + np.log(frequencies[log_t]/min_log_hz) / logstep
+        log_t = frequencies >= min_log_hz
+        mels[log_t] = min_log_mel + np.log(frequencies[log_t] / min_log_hz) / logstep
     elif frequencies >= min_log_hz:
         # If we have scalar data, heck directly
         mels = min_log_mel + np.log(frequencies / min_log_hz) / logstep
@@ -804,7 +812,7 @@ def mel_to_hz(mels, htk=False):
     mels = np.asanyarray(mels)
 
     if htk:
-        return 700.0 * (10.0**(mels / 2595.0) - 1.0)
+        return 700.0 * (10.0 ** (mels / 2595.0) - 1.0)
 
     # Fill in the linear scale
     f_min = 0.0
@@ -812,13 +820,13 @@ def mel_to_hz(mels, htk=False):
     freqs = f_min + f_sp * mels
 
     # And now the nonlinear scale
-    min_log_hz = 1000.0                         # beginning of log region (Hz)
-    min_log_mel = (min_log_hz - f_min) / f_sp   # same (Mels)
-    logstep = np.log(6.4) / 27.0                # step size for log region
+    min_log_hz = 1000.0  # beginning of log region (Hz)
+    min_log_mel = (min_log_hz - f_min) / f_sp  # same (Mels)
+    logstep = np.log(6.4) / 27.0  # step size for log region
 
     if mels.ndim:
         # If we have vector data, vectorize
-        log_t = (mels >= min_log_mel)
+        log_t = mels >= min_log_mel
         freqs[log_t] = min_log_hz * np.exp(logstep * (mels[log_t] - min_log_mel))
     elif mels >= min_log_mel:
         # If we have scalar data, check directly
@@ -858,7 +866,7 @@ def hz_to_octs(frequencies, tuning=0.0, bins_per_octave=12):
     octs_to_hz
     """
 
-    A440 = 440.0 * 2.0**(tuning / bins_per_octave)
+    A440 = 440.0 * 2.0 ** (tuning / bins_per_octave)
 
     return np.log2(np.asanyarray(frequencies) / (float(A440) / 16))
 
@@ -895,13 +903,13 @@ def octs_to_hz(octs, tuning=0.0, bins_per_octave=12):
     --------
     hz_to_octs
     """
-    A440 = 440.0 * 2.0**(tuning / bins_per_octave)
+    A440 = 440.0 * 2.0 ** (tuning / bins_per_octave)
 
-    return (float(A440) / 16)*(2.0**np.asanyarray(octs))
+    return (float(A440) / 16) * (2.0 ** np.asanyarray(octs))
 
 
 def fft_frequencies(sr=22050, n_fft=2048):
-    '''Alternative implementation of `np.fft.fftfreq`
+    """Alternative implementation of `np.fft.fftfreq`
 
     Parameters
     ----------
@@ -924,12 +932,9 @@ def fft_frequencies(sr=22050, n_fft=2048):
     array([     0.   ,   1378.125,   2756.25 ,   4134.375,
              5512.5  ,   6890.625,   8268.75 ,   9646.875,  11025.   ])
 
-    '''
+    """
 
-    return np.linspace(0,
-                       float(sr) / 2,
-                       int(1 + n_fft//2),
-                       endpoint=True)
+    return np.linspace(0, float(sr) / 2, int(1 + n_fft // 2), endpoint=True)
 
 
 def cqt_frequencies(n_bins, fmin, bins_per_octave=12, tuning=0.0):
@@ -964,8 +969,8 @@ def cqt_frequencies(n_bins, fmin, bins_per_octave=12, tuning=0.0):
         Center frequency for each CQT bin
     """
 
-    correction = 2.0**(float(tuning) / bins_per_octave)
-    frequencies = 2.0**(np.arange(0, n_bins, dtype=float) / bins_per_octave)
+    correction = 2.0 ** (float(tuning) / bins_per_octave)
+    frequencies = 2.0 ** (np.arange(0, n_bins, dtype=float) / bins_per_octave)
 
     return correction * fmin * frequencies
 
@@ -1058,7 +1063,7 @@ def mel_frequencies(n_mels=128, fmin=0.0, fmax=11025.0, htk=False):
 
 
 def tempo_frequencies(n_bins, hop_length=512, sr=22050):
-    '''Compute the frequencies (in beats per minute) corresponding
+    """Compute the frequencies (in beats per minute) corresponding
     to an onset auto-correlation or tempogram matrix.
 
     Parameters
@@ -1086,7 +1091,7 @@ def tempo_frequencies(n_bins, hop_length=512, sr=22050):
     >>> librosa.tempo_frequencies(384)
     array([      inf,  2583.984,  1291.992, ...,     6.782,
                6.764,     6.747])
-    '''
+    """
 
     bin_frequencies = np.zeros(int(n_bins), dtype=np.float)
 
@@ -1097,7 +1102,7 @@ def tempo_frequencies(n_bins, hop_length=512, sr=22050):
 
 
 def fourier_tempo_frequencies(sr=22050, win_length=384, hop_length=512):
-    '''Compute the frequencies (in beats per minute) corresponding
+    """Compute the frequencies (in beats per minute) corresponding
     to a Fourier tempogram matrix.
 
     Parameters
@@ -1123,7 +1128,7 @@ def fourier_tempo_frequencies(sr=22050, win_length=384, hop_length=512):
     >>> librosa.fourier_tempo_frequencies(384)
     array([ 0.   ,  0.117,  0.234, ..., 22.266, 22.383, 22.5  ])
 
-    '''
+    """
 
     # sr / hop_length gets the frame rate
     # multiplying by 60 turns frames / sec into frames / minute
@@ -1131,8 +1136,8 @@ def fourier_tempo_frequencies(sr=22050, win_length=384, hop_length=512):
 
 
 # A-weighting should be capitalized: suppress the naming warning
-def A_weighting(frequencies, min_db=-80.0):     # pylint: disable=invalid-name
-    '''Compute the A-weighting of a set of frequencies.
+def A_weighting(frequencies, min_db=-80.0):  # pylint: disable=invalid-name
+    """Compute the A-weighting of a set of frequencies.
 
     Parameters
     ----------
@@ -1167,21 +1172,24 @@ def A_weighting(frequencies, min_db=-80.0):     # pylint: disable=invalid-name
     >>> plt.title('A-Weighting of CQT frequencies')
     >>> plt.show()
 
-    '''
+    """
 
     # Vectorize to make our lives easier
     frequencies = np.asanyarray(frequencies)
 
     # Pre-compute squared frequency
-    f_sq = frequencies**2.0
+    f_sq = frequencies ** 2.0
 
-    const = np.array([12200, 20.6, 107.7, 737.9])**2.0
+    const = np.array([12200, 20.6, 107.7, 737.9]) ** 2.0
 
-    weights = 2.0 + 20.0 * (np.log10(const[0]) + 4 * np.log10(frequencies)
-                            - np.log10(f_sq + const[0])
-                            - np.log10(f_sq + const[1])
-                            - 0.5 * np.log10(f_sq + const[2])
-                            - 0.5 * np.log10(f_sq + const[3]))
+    weights = 2.0 + 20.0 * (
+        np.log10(const[0])
+        + 4 * np.log10(frequencies)
+        - np.log10(f_sq + const[0])
+        - np.log10(f_sq + const[1])
+        - 0.5 * np.log10(f_sq + const[2])
+        - 0.5 * np.log10(f_sq + const[3])
+    )
 
     if min_db is not None:
         weights = np.maximum(min_db, weights)

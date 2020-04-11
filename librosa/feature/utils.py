@@ -7,12 +7,13 @@ import scipy.signal
 
 from .._cache import cache
 from ..util.exceptions import ParameterError
-__all__ = ['delta', 'stack_memory']
+
+__all__ = ["delta", "stack_memory"]
 
 
 @cache(level=40)
-def delta(data, width=9, order=1, axis=-1, mode='interp', **kwargs):
-    r'''Compute delta features: local estimate of the derivative
+def delta(data, width=9, order=1, axis=-1, mode="interp", **kwargs):
+    r"""Compute delta features: local estimate of the derivative
     of the input data along the selected axis.
 
     Delta features are computed Savitsky-Golay filtering.
@@ -92,27 +93,27 @@ def delta(data, width=9, order=1, axis=-1, mode='interp', **kwargs):
     >>> plt.tight_layout()
     >>> plt.show()
 
-    '''
+    """
 
     data = np.atleast_1d(data)
 
-    if mode == 'interp' and width > data.shape[axis]:
-        raise ParameterError("when mode='interp', width={} "
-                             "cannot exceed data.shape[axis]={}".format(width, data.shape[axis]))
+    if mode == "interp" and width > data.shape[axis]:
+        raise ParameterError(
+            "when mode='interp', width={} "
+            "cannot exceed data.shape[axis]={}".format(width, data.shape[axis])
+        )
 
     if width < 3 or np.mod(width, 2) != 1:
-        raise ParameterError('width must be an odd integer >= 3')
+        raise ParameterError("width must be an odd integer >= 3")
 
     if order <= 0 or not isinstance(order, int):
-        raise ParameterError('order must be a positive integer')
+        raise ParameterError("order must be a positive integer")
 
-    kwargs.pop('deriv', None)
-    kwargs.setdefault('polyorder', order)
-    return scipy.signal.savgol_filter(data, width,
-                                      deriv=order,
-                                      axis=axis,
-                                      mode=mode,
-                                      **kwargs)
+    kwargs.pop("deriv", None)
+    kwargs.setdefault("polyorder", order)
+    return scipy.signal.savgol_filter(
+        data, width, deriv=order, axis=axis, mode=mode, **kwargs
+    )
 
 
 @cache(level=40)
@@ -217,18 +218,18 @@ def stack_memory(data, n_steps=2, delay=1, **kwargs):
     """
 
     if n_steps < 1:
-        raise ParameterError('n_steps must be a positive integer')
+        raise ParameterError("n_steps must be a positive integer")
 
     if delay == 0:
-        raise ParameterError('delay must be a non-zero integer')
+        raise ParameterError("delay must be a non-zero integer")
 
     data = np.atleast_2d(data)
 
     t = data.shape[1]
-    kwargs.setdefault('mode', 'constant')
+    kwargs.setdefault("mode", "constant")
 
-    if kwargs['mode'] == 'constant':
-        kwargs.setdefault('constant_values', [0])
+    if kwargs["mode"] == "constant":
+        kwargs.setdefault("constant_values", [0])
 
     # Pad the end with zeros, which will roll to the front below
     if delay > 0:
@@ -238,7 +239,9 @@ def stack_memory(data, n_steps=2, delay=1, **kwargs):
 
     data = np.pad(data, [(0, 0), padding], **kwargs)
 
-    history = np.vstack([np.roll(data, -i * delay, axis=1) for i in range(n_steps)[::-1]])
+    history = np.vstack(
+        [np.roll(data, -i * delay, axis=1) for i in range(n_steps)[::-1]]
+    )
 
     # Trim to original width
     if delay > 0:

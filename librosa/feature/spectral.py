@@ -18,27 +18,38 @@ from ..core.constantq import cqt, hybrid_cqt
 from ..core.pitch import estimate_tuning
 
 
-__all__ = ['spectral_centroid',
-           'spectral_bandwidth',
-           'spectral_contrast',
-           'spectral_rolloff',
-           'spectral_flatness',
-           'poly_features',
-           'rms',
-           'zero_crossing_rate',
-           'chroma_stft',
-           'chroma_cqt',
-           'chroma_cens',
-           'melspectrogram',
-           'mfcc',
-           'tonnetz']
+__all__ = [
+    "spectral_centroid",
+    "spectral_bandwidth",
+    "spectral_contrast",
+    "spectral_rolloff",
+    "spectral_flatness",
+    "poly_features",
+    "rms",
+    "zero_crossing_rate",
+    "chroma_stft",
+    "chroma_cqt",
+    "chroma_cens",
+    "melspectrogram",
+    "mfcc",
+    "tonnetz",
+]
 
 
 # -- Spectral features -- #
-def spectral_centroid(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
-                      freq=None, win_length=None, window='hann', center=True,
-                      pad_mode='reflect'):
-    '''Compute the spectral centroid.
+def spectral_centroid(
+    y=None,
+    sr=22050,
+    S=None,
+    n_fft=2048,
+    hop_length=512,
+    freq=None,
+    win_length=None,
+    window="hann",
+    center=True,
+    pad_mode="reflect",
+):
+    """Compute the spectral centroid.
 
     Each frame of a magnitude spectrogram is normalized and treated as a
     distribution over frequency bins, from which the mean (centroid) is
@@ -155,18 +166,27 @@ def spectral_centroid(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
     >>> plt.title('log Power spectrogram')
     >>> plt.tight_layout()
     >>> plt.show()
-    '''
+    """
 
-    S, n_fft = _spectrogram(y=y, S=S, n_fft=n_fft, hop_length=hop_length,
-                            win_length=win_length, window=window, center=center,
-                            pad_mode=pad_mode)
+    S, n_fft = _spectrogram(
+        y=y,
+        S=S,
+        n_fft=n_fft,
+        hop_length=hop_length,
+        win_length=win_length,
+        window=window,
+        center=center,
+        pad_mode=pad_mode,
+    )
 
     if not np.isrealobj(S):
-        raise ParameterError('Spectral centroid is only defined '
-                             'with real-valued input')
+        raise ParameterError(
+            "Spectral centroid is only defined " "with real-valued input"
+        )
     elif np.any(S < 0):
-        raise ParameterError('Spectral centroid is only defined '
-                             'with non-negative energies')
+        raise ParameterError(
+            "Spectral centroid is only defined " "with non-negative energies"
+        )
 
     # Compute the center frequencies of each bin
     if freq is None:
@@ -176,14 +196,25 @@ def spectral_centroid(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
         freq = freq.reshape((-1, 1))
 
     # Column-normalize S
-    return np.sum(freq * util.normalize(S, norm=1, axis=0),
-                  axis=0, keepdims=True)
+    return np.sum(freq * util.normalize(S, norm=1, axis=0), axis=0, keepdims=True)
 
 
-def spectral_bandwidth(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
-                       win_length=None, window='hann', center=True, pad_mode='reflect',
-                       freq=None, centroid=None, norm=True, p=2):
-    '''Compute p'th-order spectral bandwidth.
+def spectral_bandwidth(
+    y=None,
+    sr=22050,
+    S=None,
+    n_fft=2048,
+    hop_length=512,
+    win_length=None,
+    window="hann",
+    center=True,
+    pad_mode="reflect",
+    freq=None,
+    centroid=None,
+    norm=True,
+    p=2,
+):
+    """Compute p'th-order spectral bandwidth.
 
        The spectral bandwidth [1]_ at frame `t` is computed by
 
@@ -295,24 +326,32 @@ def spectral_bandwidth(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
     >>> plt.tight_layout()
     >>> plt.show()
 
-    '''
+    """
 
-    S, n_fft = _spectrogram(y=y, S=S, n_fft=n_fft, hop_length=hop_length,
-                            win_length=win_length, window=window, center=center,
-                            pad_mode=pad_mode)
+    S, n_fft = _spectrogram(
+        y=y,
+        S=S,
+        n_fft=n_fft,
+        hop_length=hop_length,
+        win_length=win_length,
+        window=window,
+        center=center,
+        pad_mode=pad_mode,
+    )
 
     if not np.isrealobj(S):
-        raise ParameterError('Spectral bandwidth is only defined '
-                             'with real-valued input')
+        raise ParameterError(
+            "Spectral bandwidth is only defined " "with real-valued input"
+        )
     elif np.any(S < 0):
-        raise ParameterError('Spectral bandwidth is only defined '
-                             'with non-negative energies')
+        raise ParameterError(
+            "Spectral bandwidth is only defined " "with non-negative energies"
+        )
 
     if centroid is None:
-        centroid = spectral_centroid(y=y, sr=sr, S=S,
-                                     n_fft=n_fft,
-                                     hop_length=hop_length,
-                                     freq=freq)
+        centroid = spectral_centroid(
+            y=y, sr=sr, S=S, n_fft=n_fft, hop_length=hop_length, freq=freq
+        )
 
     # Compute the center frequencies of each bin
     if freq is None:
@@ -327,14 +366,26 @@ def spectral_bandwidth(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
     if norm:
         S = util.normalize(S, norm=1, axis=0)
 
-    return np.sum(S * deviation**p, axis=0, keepdims=True)**(1./p)
+    return np.sum(S * deviation ** p, axis=0, keepdims=True) ** (1.0 / p)
 
 
-def spectral_contrast(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
-                      win_length=None, window='hann', center=True, pad_mode='reflect',
-                      freq=None, fmin=200.0, n_bands=6, quantile=0.02,
-                      linear=False):
-    '''Compute spectral contrast [1]_
+def spectral_contrast(
+    y=None,
+    sr=22050,
+    S=None,
+    n_fft=2048,
+    hop_length=512,
+    win_length=None,
+    window="hann",
+    center=True,
+    pad_mode="reflect",
+    freq=None,
+    fmin=200.0,
+    n_bands=6,
+    quantile=0.02,
+    linear=False,
+):
+    """Compute spectral contrast [1]_
 
     Each frame of a spectrogram `S` is divided into sub-bands.
     For each sub-band, the energy contrast is estimated by comparing
@@ -442,11 +493,18 @@ def spectral_contrast(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
     >>> plt.title('Spectral contrast')
     >>> plt.tight_layout()
     >>> plt.show()
-    '''
+    """
 
-    S, n_fft = _spectrogram(y=y, S=S, n_fft=n_fft, hop_length=hop_length,
-                            win_length=win_length, window=window, center=center,
-                            pad_mode=pad_mode)
+    S, n_fft = _spectrogram(
+        y=y,
+        S=S,
+        n_fft=n_fft,
+        hop_length=hop_length,
+        win_length=win_length,
+        window=window,
+        center=center,
+        pad_mode=pad_mode,
+    )
 
     # Compute the center frequencies of each bin
     if freq is None:
@@ -455,24 +513,26 @@ def spectral_contrast(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
     freq = np.atleast_1d(freq)
 
     if freq.ndim != 1 or len(freq) != S.shape[0]:
-        raise ParameterError('freq.shape mismatch: expected '
-                             '({:d},)'.format(S.shape[0]))
+        raise ParameterError(
+            "freq.shape mismatch: expected " "({:d},)".format(S.shape[0])
+        )
 
     if n_bands < 1 or not isinstance(n_bands, int):
-        raise ParameterError('n_bands must be a positive integer')
+        raise ParameterError("n_bands must be a positive integer")
 
     if not 0.0 < quantile < 1.0:
-        raise ParameterError('quantile must lie in the range (0, 1)')
+        raise ParameterError("quantile must lie in the range (0, 1)")
 
     if fmin <= 0:
-        raise ParameterError('fmin must be a positive number')
+        raise ParameterError("fmin must be a positive number")
 
     octa = np.zeros(n_bands + 2)
-    octa[1:] = fmin * (2.0**np.arange(0, n_bands + 1))
+    octa[1:] = fmin * (2.0 ** np.arange(0, n_bands + 1))
 
     if np.any(octa[:-1] >= 0.5 * sr):
-        raise ParameterError('Frequency band exceeds Nyquist. '
-                             'Reduce either fmin or n_bands.')
+        raise ParameterError(
+            "Frequency band exceeds Nyquist. " "Reduce either fmin or n_bands."
+        )
 
     valley = np.zeros((n_bands + 1, S.shape[1]))
     peak = np.zeros_like(valley)
@@ -486,7 +546,7 @@ def spectral_contrast(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
             current_band[idx[0] - 1] = True
 
         if k == n_bands:
-            current_band[idx[-1] + 1:] = True
+            current_band[idx[-1] + 1 :] = True
 
         sub_band = S[current_band]
 
@@ -508,10 +568,20 @@ def spectral_contrast(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
         return power_to_db(peak) - power_to_db(valley)
 
 
-def spectral_rolloff(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
-                     win_length=None, window='hann', center=True, pad_mode='reflect',
-                     freq=None, roll_percent=0.85):
-    '''Compute roll-off frequency.
+def spectral_rolloff(
+    y=None,
+    sr=22050,
+    S=None,
+    n_fft=2048,
+    hop_length=512,
+    win_length=None,
+    window="hann",
+    center=True,
+    pad_mode="reflect",
+    freq=None,
+    roll_percent=0.85,
+):
+    """Compute roll-off frequency.
 
     The roll-off frequency is defined for each frame as the center frequency
     for a spectrogram bin such that at least roll_percent (0.85 by default)
@@ -618,21 +688,30 @@ def spectral_rolloff(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
     >>> plt.tight_layout()
     >>> plt.show()
 
-    '''
+    """
 
     if not 0.0 < roll_percent < 1.0:
-        raise ParameterError('roll_percent must lie in the range (0, 1)')
+        raise ParameterError("roll_percent must lie in the range (0, 1)")
 
-    S, n_fft = _spectrogram(y=y, S=S, n_fft=n_fft, hop_length=hop_length,
-                            win_length=win_length, window=window, center=center,
-                            pad_mode=pad_mode)
+    S, n_fft = _spectrogram(
+        y=y,
+        S=S,
+        n_fft=n_fft,
+        hop_length=hop_length,
+        win_length=win_length,
+        window=window,
+        center=center,
+        pad_mode=pad_mode,
+    )
 
     if not np.isrealobj(S):
-        raise ParameterError('Spectral rolloff is only defined '
-                             'with real-valued input')
+        raise ParameterError(
+            "Spectral rolloff is only defined " "with real-valued input"
+        )
     elif np.any(S < 0):
-        raise ParameterError('Spectral rolloff is only defined '
-                             'with non-negative energies')
+        raise ParameterError(
+            "Spectral rolloff is only defined " "with non-negative energies"
+        )
 
     # Compute the center frequencies of each bin
     if freq is None:
@@ -651,10 +730,19 @@ def spectral_rolloff(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
     return np.nanmin(ind * freq, axis=0, keepdims=True)
 
 
-def spectral_flatness(y=None, S=None, n_fft=2048, hop_length=512,
-                      win_length=None, window='hann', center=True, pad_mode='reflect',
-                      amin=1e-10, power=2.0):
-    '''Compute spectral flatness
+def spectral_flatness(
+    y=None,
+    S=None,
+    n_fft=2048,
+    hop_length=512,
+    win_length=None,
+    window="hann",
+    center=True,
+    pad_mode="reflect",
+    amin=1e-10,
+    power=2.0,
+):
+    """Compute spectral flatness
 
     Spectral flatness (or tonality coefficient) is a measure to
     quantify how much noise-like a sound is, as opposed to being
@@ -744,20 +832,30 @@ def spectral_flatness(y=None, S=None, n_fft=2048, hop_length=512,
     array([[  1.00000e+00,   5.82299e-03,   5.64624e-04, ...,   9.99063e-01,
           1.00000e+00,   1.00000e+00]], dtype=float32)
 
-    '''
+    """
     if amin <= 0:
-        raise ParameterError('amin must be strictly positive')
+        raise ParameterError("amin must be strictly positive")
 
-    S, n_fft = _spectrogram(y=y, S=S, n_fft=n_fft, hop_length=hop_length,
-                            power=1., win_length=win_length, window=window,
-                            center=center, pad_mode=pad_mode)
+    S, n_fft = _spectrogram(
+        y=y,
+        S=S,
+        n_fft=n_fft,
+        hop_length=hop_length,
+        power=1.0,
+        win_length=win_length,
+        window=window,
+        center=center,
+        pad_mode=pad_mode,
+    )
 
     if not np.isrealobj(S):
-        raise ParameterError('Spectral flatness is only defined '
-                             'with real-valued input')
+        raise ParameterError(
+            "Spectral flatness is only defined " "with real-valued input"
+        )
     elif np.any(S < 0):
-        raise ParameterError('Spectral flatness is only defined '
-                             'with non-negative energies')
+        raise ParameterError(
+            "Spectral flatness is only defined " "with non-negative energies"
+        )
 
     S_thresh = np.maximum(amin, S ** power)
     gmean = np.exp(np.mean(np.log(S_thresh), axis=0, keepdims=True))
@@ -765,9 +863,10 @@ def spectral_flatness(y=None, S=None, n_fft=2048, hop_length=512,
     return gmean / amean
 
 
-def rms(y=None, S=None, frame_length=2048, hop_length=512,
-        center=True, pad_mode='reflect'):
-    '''Compute root-mean-square (RMS) value for each frame, either from the
+def rms(
+    y=None, S=None, frame_length=2048, hop_length=512, center=True, pad_mode="reflect"
+):
+    """Compute root-mean-square (RMS) value for each frame, either from the
     audio samples `y` or from a spectrogram `S`.
 
     Computing the RMS value from audio samples is faster as it doesn't require
@@ -837,28 +936,26 @@ def rms(y=None, S=None, frame_length=2048, hop_length=512,
     >>> librosa.feature.rms(S=S)
     >>> plt.show()
 
-    '''
+    """
     if y is not None:
         y = to_mono(y)
         if center:
             y = np.pad(y, int(frame_length // 2), mode=pad_mode)
 
-        x = util.frame(y,
-                       frame_length=frame_length,
-                       hop_length=hop_length)
+        x = util.frame(y, frame_length=frame_length, hop_length=hop_length)
 
         # Calculate power
-        power = np.mean(np.abs(x)**2, axis=0, keepdims=True)
+        power = np.mean(np.abs(x) ** 2, axis=0, keepdims=True)
     elif S is not None:
         # Check the frame length
         if S.shape[0] != frame_length // 2 + 1:
             raise ParameterError(
-                    'Since S.shape[0] is {}, '
-                    'frame_length is expected to be {} or {}; '
-                    'found {}'.format(
-                            S.shape[0],
-                            S.shape[0] * 2 - 2, S.shape[0] * 2 - 1,
-                            frame_length))
+                "Since S.shape[0] is {}, "
+                "frame_length is expected to be {} or {}; "
+                "found {}".format(
+                    S.shape[0], S.shape[0] * 2 - 2, S.shape[0] * 2 - 1, frame_length
+                )
+            )
 
         # power spectrogram
         x = np.abs(S) ** 2
@@ -869,17 +966,27 @@ def rms(y=None, S=None, frame_length=2048, hop_length=512,
             x[-1] *= 0.5
 
         # Calculate power
-        power = 2 * np.sum(x, axis=0, keepdims=True) / frame_length**2
+        power = 2 * np.sum(x, axis=0, keepdims=True) / frame_length ** 2
     else:
-        raise ParameterError('Either `y` or `S` must be input.')
+        raise ParameterError("Either `y` or `S` must be input.")
 
     return np.sqrt(power)
 
 
-def poly_features(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
-                  win_length=None, window='hann', center=True, pad_mode='reflect',
-                  order=1, freq=None):
-    '''Get coefficients of fitting an nth-order polynomial to the columns
+def poly_features(
+    y=None,
+    sr=22050,
+    S=None,
+    n_fft=2048,
+    hop_length=512,
+    win_length=None,
+    window="hann",
+    center=True,
+    pad_mode="reflect",
+    order=1,
+    freq=None,
+):
+    """Get coefficients of fitting an nth-order polynomial to the columns
     of a spectrogram.
 
     Parameters
@@ -986,11 +1093,18 @@ def poly_features(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
     ...                          y_axis='log')
     >>> plt.tight_layout()
     >>> plt.show()
-    '''
+    """
 
-    S, n_fft = _spectrogram(y=y, S=S, n_fft=n_fft, hop_length=hop_length,
-                            win_length=win_length, window=window, center=center,
-                            pad_mode=pad_mode)
+    S, n_fft = _spectrogram(
+        y=y,
+        S=S,
+        n_fft=n_fft,
+        hop_length=hop_length,
+        win_length=win_length,
+        window=window,
+        center=center,
+        pad_mode=pad_mode,
+    )
 
     # Compute the center frequencies of each bin
     if freq is None:
@@ -1001,15 +1115,16 @@ def poly_features(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
         coefficients = np.polyfit(freq, S, order)
     else:
         # Else, fit each frame independently and stack the results
-        coefficients = np.concatenate([[np.polyfit(freq[:, i], S[:, i], order)]
-                                       for i in range(S.shape[1])], axis=0).T
+        coefficients = np.concatenate(
+            [[np.polyfit(freq[:, i], S[:, i], order)] for i in range(S.shape[1])],
+            axis=0,
+        ).T
 
     return coefficients
 
 
-def zero_crossing_rate(y, frame_length=2048, hop_length=512, center=True,
-                       **kwargs):
-    '''Compute the zero-crossing rate of an audio time series.
+def zero_crossing_rate(y, frame_length=2048, hop_length=512, center=True, **kwargs):
+    """Compute the zero-crossing rate of an audio time series.
 
     Parameters
     ----------
@@ -1051,17 +1166,17 @@ def zero_crossing_rate(y, frame_length=2048, hop_length=512, center=True,
     >>> librosa.feature.zero_crossing_rate(y)
     array([[ 0.134,  0.139, ...,  0.387,  0.322]])
 
-    '''
+    """
 
     util.valid_audio(y)
 
     if center:
-        y = np.pad(y, int(frame_length // 2), mode='edge')
+        y = np.pad(y, int(frame_length // 2), mode="edge")
 
     y_framed = util.frame(y, frame_length, hop_length)
 
-    kwargs['axis'] = 0
-    kwargs.setdefault('pad', False)
+    kwargs["axis"] = 0
+    kwargs.setdefault("pad", False)
 
     crossings = zero_crossings(y_framed, **kwargs)
 
@@ -1069,10 +1184,21 @@ def zero_crossing_rate(y, frame_length=2048, hop_length=512, center=True,
 
 
 # -- Chroma --#
-def chroma_stft(y=None, sr=22050, S=None, norm=np.inf, n_fft=2048,
-                hop_length=512, win_length=None, window='hann', center=True,
-                pad_mode='reflect', tuning=None, n_chroma=12,
-                **kwargs):
+def chroma_stft(
+    y=None,
+    sr=22050,
+    S=None,
+    norm=np.inf,
+    n_fft=2048,
+    hop_length=512,
+    win_length=None,
+    window="hann",
+    center=True,
+    pad_mode="reflect",
+    tuning=None,
+    n_chroma=12,
+    **kwargs
+):
     """Compute a chromagram from a waveform or power spectrogram.
 
     This implementation is derived from `chromagram_E` [1]_
@@ -1193,9 +1319,17 @@ def chroma_stft(y=None, sr=22050, S=None, norm=np.inf, n_fft=2048,
 
     """
 
-    S, n_fft = _spectrogram(y=y, S=S, n_fft=n_fft, hop_length=hop_length, power=2,
-                            win_length=win_length, window=window, center=center,
-                            pad_mode=pad_mode)
+    S, n_fft = _spectrogram(
+        y=y,
+        S=S,
+        n_fft=n_fft,
+        hop_length=hop_length,
+        power=2,
+        win_length=win_length,
+        window=window,
+        center=center,
+        pad_mode=pad_mode,
+    )
 
     if tuning is None:
         tuning = estimate_tuning(S=S, sr=sr, bins_per_octave=n_chroma)
@@ -1210,10 +1344,22 @@ def chroma_stft(y=None, sr=22050, S=None, norm=np.inf, n_fft=2048,
     return util.normalize(raw_chroma, norm=norm, axis=0)
 
 
-def chroma_cqt(y=None, sr=22050, C=None, hop_length=512, fmin=None,
-               norm=np.inf, threshold=0.0, tuning=None, n_chroma=12,
-               n_octaves=7, window=None, bins_per_octave=None, cqt_mode='full'):
-    r'''Constant-Q chromagram
+def chroma_cqt(
+    y=None,
+    sr=22050,
+    C=None,
+    hop_length=512,
+    fmin=None,
+    norm=np.inf,
+    threshold=0.0,
+    tuning=None,
+    n_chroma=12,
+    n_octaves=7,
+    window=None,
+    bins_per_octave=None,
+    cqt_mode="full",
+):
+    r"""Constant-Q chromagram
 
     Parameters
     ----------
@@ -1295,28 +1441,35 @@ def chroma_cqt(y=None, sr=22050, C=None, hop_length=512, fmin=None,
     >>> plt.tight_layout()
     >>> plt.show()
 
-    '''
+    """
 
-    cqt_func = {'full': cqt, 'hybrid': hybrid_cqt}
+    cqt_func = {"full": cqt, "hybrid": hybrid_cqt}
 
     if bins_per_octave is None:
         bins_per_octave = n_chroma
 
     # Build the CQT if we don't have one already
     if C is None:
-        C = np.abs(cqt_func[cqt_mode](y, sr=sr,
-                                      hop_length=hop_length,
-                                      fmin=fmin,
-                                      n_bins=n_octaves * bins_per_octave,
-                                      bins_per_octave=bins_per_octave,
-                                      tuning=tuning))
+        C = np.abs(
+            cqt_func[cqt_mode](
+                y,
+                sr=sr,
+                hop_length=hop_length,
+                fmin=fmin,
+                n_bins=n_octaves * bins_per_octave,
+                bins_per_octave=bins_per_octave,
+                tuning=tuning,
+            )
+        )
 
     # Map to chroma
-    cq_to_chr = filters.cq_to_chroma(C.shape[0],
-                                     bins_per_octave=bins_per_octave,
-                                     n_chroma=n_chroma,
-                                     fmin=fmin,
-                                     window=window)
+    cq_to_chr = filters.cq_to_chroma(
+        C.shape[0],
+        bins_per_octave=bins_per_octave,
+        n_chroma=n_chroma,
+        fmin=fmin,
+        window=window,
+    )
     chroma = cq_to_chr.dot(C)
 
     if threshold is not None:
@@ -1329,11 +1482,23 @@ def chroma_cqt(y=None, sr=22050, C=None, hop_length=512, fmin=None,
     return chroma
 
 
-def chroma_cens(y=None, sr=22050, C=None, hop_length=512, fmin=None,
-                tuning=None, n_chroma=12,
-                n_octaves=7, bins_per_octave=None, cqt_mode='full', window=None,
-                norm=2, win_len_smooth=41, smoothing_window='hann'):
-    r'''Computes the chroma variant "Chroma Energy Normalized" (CENS), following [1]_.
+def chroma_cens(
+    y=None,
+    sr=22050,
+    C=None,
+    hop_length=512,
+    fmin=None,
+    tuning=None,
+    n_chroma=12,
+    n_octaves=7,
+    bins_per_octave=None,
+    cqt_mode="full",
+    window=None,
+    norm=2,
+    win_len_smooth=41,
+    smoothing_window="hann",
+):
+    r"""Computes the chroma variant "Chroma Energy Normalized" (CENS), following [1]_.
 
     To compute CENS features, following steps are taken after obtaining chroma vectors using `chroma_cqt`:
     1. L-1 normalization of each chroma vector
@@ -1434,20 +1599,31 @@ def chroma_cens(y=None, sr=22050, C=None, hop_length=512, fmin=None,
     >>> plt.colorbar()
     >>> plt.tight_layout()
     >>> plt.show()
-    '''
-    if not ((win_len_smooth is None) or (isinstance(win_len_smooth, int) and win_len_smooth > 0)):
-        raise ParameterError('win_len_smooth={} must be a positive integer or None'.format(win_len_smooth))
+    """
+    if not (
+        (win_len_smooth is None)
+        or (isinstance(win_len_smooth, int) and win_len_smooth > 0)
+    ):
+        raise ParameterError(
+            "win_len_smooth={} must be a positive integer or None".format(
+                win_len_smooth
+            )
+        )
 
-    chroma = chroma_cqt(y=y, C=C, sr=sr,
-                        hop_length=hop_length,
-                        fmin=fmin,
-                        bins_per_octave=bins_per_octave,
-                        tuning=tuning,
-                        norm=None,
-                        n_chroma=n_chroma,
-                        n_octaves=n_octaves,
-                        cqt_mode=cqt_mode,
-                        window=window)
+    chroma = chroma_cqt(
+        y=y,
+        C=C,
+        sr=sr,
+        hop_length=hop_length,
+        fmin=fmin,
+        bins_per_octave=bins_per_octave,
+        tuning=tuning,
+        norm=None,
+        n_chroma=n_chroma,
+        n_octaves=n_octaves,
+        cqt_mode=cqt_mode,
+        window=window,
+    )
 
     # L1-Normalization
     chroma = util.normalize(chroma, norm=1, axis=0)
@@ -1467,8 +1643,7 @@ def chroma_cens(y=None, sr=22050, C=None, hop_length=512, fmin=None,
         win /= np.sum(win)
         win = np.atleast_2d(win)
 
-        cens = scipy.signal.convolve2d(chroma_quant, win,
-                                       mode='same', boundary='fill')
+        cens = scipy.signal.convolve2d(chroma_quant, win, mode="same", boundary="fill")
     else:
         cens = chroma_quant
 
@@ -1477,7 +1652,7 @@ def chroma_cens(y=None, sr=22050, C=None, hop_length=512, fmin=None,
 
 
 def tonnetz(y=None, sr=22050, chroma=None):
-    '''Computes the tonal centroid features (tonnetz), following the method of
+    """Computes the tonal centroid features (tonnetz), following the method of
     [1]_.
 
     .. [1] Harte, C., Sandler, M., & Gasser, M. (2006). "Detecting Harmonic
@@ -1548,11 +1723,13 @@ def tonnetz(y=None, sr=22050, chroma=None):
     >>> plt.tight_layout()
     >>> plt.show()
 
-    '''
+    """
 
     if y is None and chroma is None:
-        raise ParameterError('Either the audio samples or the chromagram must be '
-                             'passed as an argument.')
+        raise ParameterError(
+            "Either the audio samples or the chromagram must be "
+            "passed as an argument."
+        )
 
     if chroma is None:
         chroma = chroma_cqt(y=y, sr=sr)
@@ -1560,18 +1737,14 @@ def tonnetz(y=None, sr=22050, chroma=None):
     # Generate Transformation matrix
     dim_map = np.linspace(0, 12, num=chroma.shape[0], endpoint=False)
 
-    scale = np.asarray([7. / 6, 7. / 6,
-                        3. / 2, 3. / 2,
-                        2. / 3, 2. / 3])
+    scale = np.asarray([7.0 / 6, 7.0 / 6, 3.0 / 2, 3.0 / 2, 2.0 / 3, 2.0 / 3])
 
     V = np.multiply.outer(scale, dim_map)
 
     # Even rows compute sin()
     V[::2] -= 0.5
 
-    R = np.array([1, 1,         # Fifths
-                  1, 1,         # Minor
-                  0.5, 0.5])    # Major
+    R = np.array([1, 1, 1, 1, 0.5, 0.5])  # Fifths  # Minor  # Major
 
     phi = R[:, np.newaxis] * np.cos(np.pi * V)
 
@@ -1580,7 +1753,9 @@ def tonnetz(y=None, sr=22050, chroma=None):
 
 
 # -- Mel spectrogram and MFCCs -- #
-def mfcc(y=None, sr=22050, S=None, n_mfcc=20, dct_type=2, norm='ortho', lifter=0, **kwargs):
+def mfcc(
+    y=None, sr=22050, S=None, n_mfcc=20, dct_type=2, norm="ortho", lifter=0, **kwargs
+):
     """Mel-frequency cepstral coefficients (MFCCs)
 
     Parameters
@@ -1706,17 +1881,35 @@ def mfcc(y=None, sr=22050, S=None, n_mfcc=20, dct_type=2, norm='ortho', lifter=0
     M = scipy.fftpack.dct(S, axis=0, type=dct_type, norm=norm)[:n_mfcc]
 
     if lifter > 0:
-        M *= 1 + (lifter / 2) * np.sin(np.pi * np.arange(1, 1 + n_mfcc, dtype=M.dtype) / lifter)[:, np.newaxis]
+        M *= (
+            1
+            + (lifter / 2)
+            * np.sin(np.pi * np.arange(1, 1 + n_mfcc, dtype=M.dtype) / lifter)[
+                :, np.newaxis
+            ]
+        )
         return M
     elif lifter == 0:
         return M
     else:
-        raise ParameterError('MFCC lifter={} must be a non-negative number'.format(lifter))
+        raise ParameterError(
+            "MFCC lifter={} must be a non-negative number".format(lifter)
+        )
 
 
-def melspectrogram(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
-                   win_length=None, window='hann', center=True, pad_mode='reflect',
-                   power=2.0, **kwargs):
+def melspectrogram(
+    y=None,
+    sr=22050,
+    S=None,
+    n_fft=2048,
+    hop_length=512,
+    win_length=None,
+    window="hann",
+    center=True,
+    pad_mode="reflect",
+    power=2.0,
+    **kwargs
+):
     """Compute a mel-scaled spectrogram.
 
     If a spectrogram input `S` is provided, then it is mapped directly onto
@@ -1824,9 +2017,17 @@ def melspectrogram(y=None, sr=22050, S=None, n_fft=2048, hop_length=512,
     >>> plt.show()
     """
 
-    S, n_fft = _spectrogram(y=y, S=S, n_fft=n_fft, hop_length=hop_length, power=power,
-                            win_length=win_length, window=window, center=center,
-                            pad_mode=pad_mode)
+    S, n_fft = _spectrogram(
+        y=y,
+        S=S,
+        n_fft=n_fft,
+        hop_length=hop_length,
+        power=power,
+        win_length=win_length,
+        window=window,
+        center=center,
+        pad_mode=pad_mode,
+    )
 
     # Build a Mel filter
     mel_basis = filters.mel(sr, n_fft, **kwargs)

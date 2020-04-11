@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Constant-Q transforms'''
+"""Constant-Q transforms"""
 from __future__ import division
 
 import warnings
@@ -17,16 +17,27 @@ from .. import filters
 from .. import util
 from ..util.exceptions import ParameterError
 
-__all__ = ['cqt', 'hybrid_cqt', 'pseudo_cqt',
-           'icqt', 'griffinlim_cqt']
+__all__ = ["cqt", "hybrid_cqt", "pseudo_cqt", "icqt", "griffinlim_cqt"]
 
 
 @cache(level=20)
-def cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
-        bins_per_octave=12, tuning=0.0, filter_scale=1,
-        norm=1, sparsity=0.01, window='hann',
-        scale=True, pad_mode='reflect', res_type=None):
-    '''Compute the constant-Q transform of an audio signal.
+def cqt(
+    y,
+    sr=22050,
+    hop_length=512,
+    fmin=None,
+    n_bins=84,
+    bins_per_octave=12,
+    tuning=0.0,
+    filter_scale=1,
+    norm=1,
+    sparsity=0.01,
+    window="hann",
+    scale=True,
+    pad_mode="reflect",
+    res_type=None,
+):
+    """Compute the constant-Q transform of an audio signal.
 
     This implementation is based on the recursive sub-sampling method
     described by [1]_.
@@ -163,7 +174,7 @@ def cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
            ...,
            [  2.034e-07,   4.245e-07, ...,   6.213e-08,   1.463e-07],
            [  4.896e-08,   5.407e-07, ...,   9.176e-08,   1.051e-07]])
-    '''
+    """
 
     # How many octaves are we dealing with?
     n_octaves = int(np.ceil(float(n_bins) / bins_per_octave))
@@ -173,23 +184,24 @@ def cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
 
     if fmin is None:
         # C1 by default
-        fmin = note_to_hz('C1')
+        fmin = note_to_hz("C1")
 
     if tuning is None:
         tuning = estimate_tuning(y=y, sr=sr, bins_per_octave=bins_per_octave)
 
     # Apply tuning correction
-    fmin = fmin * 2.0**(tuning / bins_per_octave)
+    fmin = fmin * 2.0 ** (tuning / bins_per_octave)
 
     # First thing, get the freqs of the top octave
-    freqs = cqt_frequencies(n_bins, fmin,
-                            bins_per_octave=bins_per_octave)[-bins_per_octave:]
+    freqs = cqt_frequencies(n_bins, fmin, bins_per_octave=bins_per_octave)[
+        -bins_per_octave:
+    ]
 
     fmin_t = np.min(freqs)
     fmax_t = np.max(freqs)
 
     # Determine required resampling quality
-    Q = float(filter_scale) / (2.0**(1. / bins_per_octave) - 1)
+    Q = float(filter_scale) / (2.0 ** (1.0 / bins_per_octave) - 1)
     filter_cutoff = fmax_t * (1 + 0.5 * filters.window_bandwidth(window) / Q)
     nyquist = sr / 2.0
 
@@ -197,27 +209,29 @@ def cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
     if not res_type:
         auto_resample = True
         if filter_cutoff < audio.BW_FASTEST * nyquist:
-            res_type = 'kaiser_fast'
+            res_type = "kaiser_fast"
         else:
-            res_type = 'kaiser_best'
+            res_type = "kaiser_best"
 
-    y, sr, hop_length = __early_downsample(y, sr, hop_length,
-                                           res_type,
-                                           n_octaves,
-                                           nyquist, filter_cutoff, scale)
+    y, sr, hop_length = __early_downsample(
+        y, sr, hop_length, res_type, n_octaves, nyquist, filter_cutoff, scale
+    )
 
     cqt_resp = []
 
-    if auto_resample and res_type != 'kaiser_fast':
+    if auto_resample and res_type != "kaiser_fast":
 
         # Do the top octave before resampling to allow for fast resampling
-        fft_basis, n_fft, _ = __cqt_filter_fft(sr, fmin_t,
-                                               n_filters,
-                                               bins_per_octave,
-                                               filter_scale,
-                                               norm,
-                                               sparsity,
-                                               window=window)
+        fft_basis, n_fft, _ = __cqt_filter_fft(
+            sr,
+            fmin_t,
+            n_filters,
+            bins_per_octave,
+            filter_scale,
+            norm,
+            sparsity,
+            window=window,
+        )
 
         # Compute the CQT filter response and append it to the stack
         cqt_resp.append(__cqt_response(y, n_fft, hop_length, fft_basis, pad_mode))
@@ -228,23 +242,27 @@ def cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
 
         filter_cutoff = fmax_t * (1 + 0.5 * filters.window_bandwidth(window) / Q)
 
-        res_type = 'kaiser_fast'
+        res_type = "kaiser_fast"
 
     # Make sure our hop is long enough to support the bottom octave
     num_twos = __num_two_factors(hop_length)
     if num_twos < n_octaves - 1:
-        raise ParameterError('hop_length must be a positive integer '
-                             'multiple of 2^{0:d} for {1:d}-octave CQT'
-                             .format(n_octaves - 1, n_octaves))
+        raise ParameterError(
+            "hop_length must be a positive integer "
+            "multiple of 2^{0:d} for {1:d}-octave CQT".format(n_octaves - 1, n_octaves)
+        )
 
     # Now do the recursive bit
-    fft_basis, n_fft, _ = __cqt_filter_fft(sr, fmin_t,
-                                           n_filters,
-                                           bins_per_octave,
-                                           filter_scale,
-                                           norm,
-                                           sparsity,
-                                           window=window)
+    fft_basis, n_fft, _ = __cqt_filter_fft(
+        sr,
+        fmin_t,
+        n_filters,
+        bins_per_octave,
+        filter_scale,
+        norm,
+        sparsity,
+        window=window,
+    )
 
     my_y, my_sr, my_hop = y, sr, hop_length
 
@@ -254,13 +272,12 @@ def cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
         # Resample (except first time)
         if i > 0:
             if len(my_y) < 2:
-                raise ParameterError('Input signal length={} is too short for '
-                                     '{:d}-octave CQT'.format(len_orig,
-                                                              n_octaves))
+                raise ParameterError(
+                    "Input signal length={} is too short for "
+                    "{:d}-octave CQT".format(len_orig, n_octaves)
+                )
 
-            my_y = audio.resample(my_y, 2, 1,
-                                  res_type=res_type,
-                                  scale=True)
+            my_y = audio.resample(my_y, 2, 1, res_type=res_type, scale=True)
             # The re-scale the filters to compensate for downsampling
             fft_basis[:] *= np.sqrt(2)
 
@@ -273,22 +290,37 @@ def cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
     C = __trim_stack(cqt_resp, n_bins)
 
     if scale:
-        lengths = filters.constant_q_lengths(sr, fmin,
-                                             n_bins=n_bins,
-                                             bins_per_octave=bins_per_octave,
-                                             window=window,
-                                             filter_scale=filter_scale)
+        lengths = filters.constant_q_lengths(
+            sr,
+            fmin,
+            n_bins=n_bins,
+            bins_per_octave=bins_per_octave,
+            window=window,
+            filter_scale=filter_scale,
+        )
         C /= np.sqrt(lengths[:, np.newaxis])
 
     return C
 
 
 @cache(level=20)
-def hybrid_cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
-               bins_per_octave=12, tuning=0.0, filter_scale=1,
-               norm=1, sparsity=0.01, window='hann', scale=True,
-               pad_mode='reflect', res_type=None):
-    '''Compute the hybrid constant-Q transform of an audio signal.
+def hybrid_cqt(
+    y,
+    sr=22050,
+    hop_length=512,
+    fmin=None,
+    n_bins=84,
+    bins_per_octave=12,
+    tuning=0.0,
+    filter_scale=1,
+    norm=1,
+    sparsity=0.01,
+    window="hann",
+    scale=True,
+    pad_mode="reflect",
+    res_type=None,
+):
+    """Compute the hybrid constant-Q transform of an audio signal.
 
     Here, the hybrid CQT uses the pseudo CQT for higher frequencies where
     the hop_length is longer than half the filter length and the full CQT
@@ -365,32 +397,34 @@ def hybrid_cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
     -----
     This function caches at level 20.
 
-    '''
+    """
 
     if fmin is None:
         # C1 by default
-        fmin = note_to_hz('C1')
+        fmin = note_to_hz("C1")
 
     if tuning is None:
         tuning = estimate_tuning(y=y, sr=sr, bins_per_octave=bins_per_octave)
 
     # Apply tuning correction
-    fmin = fmin * 2.0**(tuning / bins_per_octave)
+    fmin = fmin * 2.0 ** (tuning / bins_per_octave)
 
     # Get all CQT frequencies
-    freqs = cqt_frequencies(n_bins, fmin,
-                            bins_per_octave=bins_per_octave)
+    freqs = cqt_frequencies(n_bins, fmin, bins_per_octave=bins_per_octave)
 
     # Compute the length of each constant-Q basis function
-    lengths = filters.constant_q_lengths(sr, fmin,
-                                         n_bins=n_bins,
-                                         bins_per_octave=bins_per_octave,
-                                         filter_scale=filter_scale,
-                                         window=window)
+    lengths = filters.constant_q_lengths(
+        sr,
+        fmin,
+        n_bins=n_bins,
+        bins_per_octave=bins_per_octave,
+        filter_scale=filter_scale,
+        window=window,
+    )
 
     # Determine which filters to use with Pseudo CQT
     # These are the ones that fit within 2 hop lengths after padding
-    pseudo_filters = 2.0**np.ceil(np.log2(lengths)) < 2 * hop_length
+    pseudo_filters = 2.0 ** np.ceil(np.log2(lengths)) < 2 * hop_length
 
     n_bins_pseudo = int(np.sum(pseudo_filters))
 
@@ -400,41 +434,64 @@ def hybrid_cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
     if n_bins_pseudo > 0:
         fmin_pseudo = np.min(freqs[pseudo_filters])
 
-        cqt_resp.append(pseudo_cqt(y, sr,
-                                   hop_length=hop_length,
-                                   fmin=fmin_pseudo,
-                                   n_bins=n_bins_pseudo,
-                                   bins_per_octave=bins_per_octave,
-                                   filter_scale=filter_scale,
-                                   norm=norm,
-                                   sparsity=sparsity,
-                                   window=window,
-                                   scale=scale,
-                                   pad_mode=pad_mode))
+        cqt_resp.append(
+            pseudo_cqt(
+                y,
+                sr,
+                hop_length=hop_length,
+                fmin=fmin_pseudo,
+                n_bins=n_bins_pseudo,
+                bins_per_octave=bins_per_octave,
+                filter_scale=filter_scale,
+                norm=norm,
+                sparsity=sparsity,
+                window=window,
+                scale=scale,
+                pad_mode=pad_mode,
+            )
+        )
 
     if n_bins_full > 0:
-        cqt_resp.append(np.abs(cqt(y, sr,
-                                   hop_length=hop_length,
-                                   fmin=fmin,
-                                   n_bins=n_bins_full,
-                                   bins_per_octave=bins_per_octave,
-                                   filter_scale=filter_scale,
-                                   norm=norm,
-                                   sparsity=sparsity,
-                                   window=window,
-                                   scale=scale,
-                                   pad_mode=pad_mode,
-                                   res_type=res_type)))
+        cqt_resp.append(
+            np.abs(
+                cqt(
+                    y,
+                    sr,
+                    hop_length=hop_length,
+                    fmin=fmin,
+                    n_bins=n_bins_full,
+                    bins_per_octave=bins_per_octave,
+                    filter_scale=filter_scale,
+                    norm=norm,
+                    sparsity=sparsity,
+                    window=window,
+                    scale=scale,
+                    pad_mode=pad_mode,
+                    res_type=res_type,
+                )
+            )
+        )
 
     return __trim_stack(cqt_resp, n_bins)
 
 
 @cache(level=20)
-def pseudo_cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
-               bins_per_octave=12, tuning=0.0, filter_scale=1,
-               norm=1, sparsity=0.01, window='hann', scale=True,
-               pad_mode='reflect'):
-    '''Compute the pseudo constant-Q transform of an audio signal.
+def pseudo_cqt(
+    y,
+    sr=22050,
+    hop_length=512,
+    fmin=None,
+    n_bins=84,
+    bins_per_octave=12,
+    tuning=0.0,
+    filter_scale=1,
+    norm=1,
+    sparsity=0.01,
+    window="hann",
+    scale=True,
+    pad_mode="reflect",
+):
+    """Compute the pseudo constant-Q transform of an audio signal.
 
     This uses a single fft size that is the smallest power of 2 that is greater
     than or equal to the max of:
@@ -505,24 +562,29 @@ def pseudo_cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
     -----
     This function caches at level 20.
 
-    '''
+    """
 
     if fmin is None:
         # C1 by default
-        fmin = note_to_hz('C1')
+        fmin = note_to_hz("C1")
 
     if tuning is None:
         tuning = estimate_tuning(y=y, sr=sr, bins_per_octave=bins_per_octave)
 
     # Apply tuning correction
-    fmin = fmin * 2.0**(tuning / bins_per_octave)
+    fmin = fmin * 2.0 ** (tuning / bins_per_octave)
 
-    fft_basis, n_fft, _ = __cqt_filter_fft(sr, fmin, n_bins,
-                                           bins_per_octave,
-                                           filter_scale,
-                                           norm, sparsity,
-                                           hop_length=hop_length,
-                                           window=window)
+    fft_basis, n_fft, _ = __cqt_filter_fft(
+        sr,
+        fmin,
+        n_bins,
+        bins_per_octave,
+        filter_scale,
+        norm,
+        sparsity,
+        hop_length=hop_length,
+        window=window,
+    )
 
     fft_basis = np.abs(fft_basis)
 
@@ -535,11 +597,14 @@ def pseudo_cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
     if scale:
         C /= np.sqrt(n_fft)
     else:
-        lengths = filters.constant_q_lengths(sr, fmin,
-                                             n_bins=n_bins,
-                                             bins_per_octave=bins_per_octave,
-                                             window=window,
-                                             filter_scale=filter_scale)
+        lengths = filters.constant_q_lengths(
+            sr,
+            fmin,
+            n_bins=n_bins,
+            bins_per_octave=bins_per_octave,
+            window=window,
+            filter_scale=filter_scale,
+        )
 
         C *= np.sqrt(lengths[:, np.newaxis] / n_fft)
 
@@ -547,10 +612,23 @@ def pseudo_cqt(y, sr=22050, hop_length=512, fmin=None, n_bins=84,
 
 
 @cache(level=40)
-def icqt(C, sr=22050, hop_length=512, fmin=None, bins_per_octave=12,
-         tuning=0.0, filter_scale=1, norm=1, sparsity=0.01, window='hann',
-         scale=True, length=None, res_type='fft', dtype=np.float32):
-    '''Compute the inverse constant-Q transform.
+def icqt(
+    C,
+    sr=22050,
+    hop_length=512,
+    fmin=None,
+    bins_per_octave=12,
+    tuning=0.0,
+    filter_scale=1,
+    norm=1,
+    sparsity=0.01,
+    window="hann",
+    scale=True,
+    length=None,
+    res_type="fft",
+    dtype=np.float32,
+):
+    """Compute the inverse constant-Q transform.
 
     Given a constant-Q transform representation `C` of an audio signal `y`,
     this function produces an approximation `y_hat`.
@@ -640,38 +718,44 @@ def icqt(C, sr=22050, hop_length=512, fmin=None, bins_per_octave=12,
     ...                 bins_per_octave=bins_per_octave)
     >>> y_hat = librosa.icqt(C=C, sr=sr, hop_length=hop_length,
     ...                 bins_per_octave=bins_per_octave)
-    '''
+    """
 
     if fmin is None:
-        fmin = note_to_hz('C1')
+        fmin = note_to_hz("C1")
 
     # Apply tuning correction
-    fmin = fmin * 2.0**(tuning / bins_per_octave)
+    fmin = fmin * 2.0 ** (tuning / bins_per_octave)
 
     # Get the top octave of frequencies
     n_bins = len(C)
 
-    freqs = cqt_frequencies(n_bins, fmin,
-                            bins_per_octave=bins_per_octave)[-bins_per_octave:]
+    freqs = cqt_frequencies(n_bins, fmin, bins_per_octave=bins_per_octave)[
+        -bins_per_octave:
+    ]
 
     n_filters = min(n_bins, bins_per_octave)
 
-    fft_basis, n_fft, lengths = __cqt_filter_fft(sr, np.min(freqs),
-                                                 n_filters,
-                                                 bins_per_octave,
-                                                 filter_scale,
-                                                 norm,
-                                                 sparsity=sparsity,
-                                                 window=window)
+    fft_basis, n_fft, lengths = __cqt_filter_fft(
+        sr,
+        np.min(freqs),
+        n_filters,
+        bins_per_octave,
+        filter_scale,
+        norm,
+        sparsity=sparsity,
+        window=window,
+    )
 
     if hop_length > min(lengths):
-        warnings.warn('hop_length={} exceeds minimum CQT filter length={:.3f}.\n'
-                      'This will probably cause unpleasant acoustic artifacts. '
-                      'Consider decreasing your hop length or increasing the '
-                      'frequency resolution of your CQT.'.format(hop_length, min(lengths)))
+        warnings.warn(
+            "hop_length={} exceeds minimum CQT filter length={:.3f}.\n"
+            "This will probably cause unpleasant acoustic artifacts. "
+            "Consider decreasing your hop length or increasing the "
+            "frequency resolution of your CQT.".format(hop_length, min(lengths))
+        )
 
     if length is not None:
-        n_frames = int(np.ceil((length+max(lengths)) / hop_length))
+        n_frames = int(np.ceil((length + max(lengths)) / hop_length))
         C = C[:, :n_frames]
 
     # The basis gets renormalized by the effective window length above;
@@ -686,26 +770,29 @@ def icqt(C, sr=22050, hop_length=512, fmin=None, bins_per_octave=12,
 
     y = None
     for octave in range(n_octaves - 1, -1, -1):
-        slice_ = slice(-(octave+1) * bins_per_octave - 1,
-                       -(octave) * bins_per_octave - 1)
+        slice_ = slice(
+            -(octave + 1) * bins_per_octave - 1, -(octave) * bins_per_octave - 1
+        )
 
         # Slice this octave
         C_oct = C[slice_]
-        inv_oct = inv_basis[:, -C_oct.shape[0]:]
+        inv_oct = inv_basis[:, -C_oct.shape[0] :]
 
-        oct_hop = hop_length // 2**octave
+        oct_hop = hop_length // 2 ** octave
 
         # Apply energy corrections
         if scale:
-            C_scale = np.sqrt(lengths[-C_oct.shape[0]:, np.newaxis]) / n_fft
+            C_scale = np.sqrt(lengths[-C_oct.shape[0] :, np.newaxis]) / n_fft
         else:
-            C_scale = lengths[-C_oct.shape[0]:, np.newaxis] * np.sqrt(2**octave) / n_fft
+            C_scale = (
+                lengths[-C_oct.shape[0] :, np.newaxis] * np.sqrt(2 ** octave) / n_fft
+            )
 
         # Inverse-project the basis for each octave
         D_oct = inv_oct.dot(C_oct / C_scale)
 
         # Inverse-STFT that response
-        y_oct = istft(D_oct, window='ones', hop_length=oct_hop, dtype=dtype)
+        y_oct = istft(D_oct, window="ones", hop_length=oct_hop, dtype=dtype)
 
         # Up-sample that octave
         if y is None:
@@ -715,7 +802,7 @@ def icqt(C, sr=22050, hop_length=512, fmin=None, bins_per_octave=12,
             # Scipy-resampling is fast here, since it's a power-of-two relation
             y = audio.resample(y, 1, 2, scale=True, res_type=res_type, fix=False)
 
-            y[:len(y_oct)] += y_oct
+            y[: len(y_oct)] += y_oct
 
     if length:
         y = util.fix_length(y, length)
@@ -724,25 +811,34 @@ def icqt(C, sr=22050, hop_length=512, fmin=None, bins_per_octave=12,
 
 
 @cache(level=10)
-def __cqt_filter_fft(sr, fmin, n_bins, bins_per_octave,
-                     filter_scale, norm, sparsity, hop_length=None,
-                     window='hann'):
-    '''Generate the frequency domain constant-Q filter basis.'''
+def __cqt_filter_fft(
+    sr,
+    fmin,
+    n_bins,
+    bins_per_octave,
+    filter_scale,
+    norm,
+    sparsity,
+    hop_length=None,
+    window="hann",
+):
+    """Generate the frequency domain constant-Q filter basis."""
 
-    basis, lengths = filters.constant_q(sr,
-                                        fmin=fmin,
-                                        n_bins=n_bins,
-                                        bins_per_octave=bins_per_octave,
-                                        filter_scale=filter_scale,
-                                        norm=norm,
-                                        pad_fft=True,
-                                        window=window)
+    basis, lengths = filters.constant_q(
+        sr,
+        fmin=fmin,
+        n_bins=n_bins,
+        bins_per_octave=bins_per_octave,
+        filter_scale=filter_scale,
+        norm=norm,
+        pad_fft=True,
+        window=window,
+    )
 
     # Filters are padded up to the nearest integral power of 2
     n_fft = basis.shape[1]
 
-    if (hop_length is not None and
-            n_fft < 2.0**(1 + np.ceil(np.log2(hop_length)))):
+    if hop_length is not None and n_fft < 2.0 ** (1 + np.ceil(np.log2(hop_length))):
 
         n_fft = int(2.0 ** (1 + np.ceil(np.log2(hop_length))))
 
@@ -751,7 +847,7 @@ def __cqt_filter_fft(sr, fmin, n_bins, bins_per_octave,
 
     # FFT and retain only the non-negative frequencies
     fft = get_fftlib()
-    fft_basis = fft.fft(basis, n=n_fft, axis=1)[:, :(n_fft // 2)+1]
+    fft_basis = fft.fft(basis, n=n_fft, axis=1)[:, : (n_fft // 2) + 1]
 
     # sparsify the basis
     fft_basis = util.sparsify_rows(fft_basis, quantile=sparsity)
@@ -760,7 +856,7 @@ def __cqt_filter_fft(sr, fmin, n_bins, bins_per_octave,
 
 
 def __trim_stack(cqt_resp, n_bins):
-    '''Helper function to trim and stack a collection of CQT responses'''
+    """Helper function to trim and stack a collection of CQT responses"""
 
     # cleanup any framing errors at the boundaries
     max_col = min(x.shape[1] for x in cqt_resp)
@@ -773,22 +869,21 @@ def __trim_stack(cqt_resp, n_bins):
 
 
 def __cqt_response(y, n_fft, hop_length, fft_basis, mode):
-    '''Compute the filter response with a target STFT hop.'''
+    """Compute the filter response with a target STFT hop."""
 
     # Compute the STFT matrix
-    D = stft(y, n_fft=n_fft, hop_length=hop_length,
-             window='ones',
-             pad_mode=mode)
+    D = stft(y, n_fft=n_fft, hop_length=hop_length, window="ones", pad_mode=mode)
 
     # And filter response energy
     return fft_basis.dot(D)
 
 
 def __early_downsample_count(nyquist, filter_cutoff, hop_length, n_octaves):
-    '''Compute the number of early downsampling operations'''
+    """Compute the number of early downsampling operations"""
 
-    downsample_count1 = max(0, int(np.ceil(np.log2(audio.BW_FASTEST * nyquist /
-                                                   filter_cutoff)) - 1) - 1)
+    downsample_count1 = max(
+        0, int(np.ceil(np.log2(audio.BW_FASTEST * nyquist / filter_cutoff)) - 1) - 1
+    )
 
     num_twos = __num_two_factors(hop_length)
     downsample_count2 = max(0, num_twos - n_octaves + 1)
@@ -796,26 +891,28 @@ def __early_downsample_count(nyquist, filter_cutoff, hop_length, n_octaves):
     return min(downsample_count1, downsample_count2)
 
 
-def __early_downsample(y, sr, hop_length, res_type, n_octaves,
-                       nyquist, filter_cutoff, scale):
-    '''Perform early downsampling on an audio signal, if it applies.'''
+def __early_downsample(
+    y, sr, hop_length, res_type, n_octaves, nyquist, filter_cutoff, scale
+):
+    """Perform early downsampling on an audio signal, if it applies."""
 
-    downsample_count = __early_downsample_count(nyquist, filter_cutoff,
-                                                hop_length, n_octaves)
+    downsample_count = __early_downsample_count(
+        nyquist, filter_cutoff, hop_length, n_octaves
+    )
 
-    if downsample_count > 0 and res_type == 'kaiser_fast':
-        downsample_factor = 2**(downsample_count)
+    if downsample_count > 0 and res_type == "kaiser_fast":
+        downsample_factor = 2 ** (downsample_count)
 
         hop_length //= downsample_factor
 
         if len(y) < downsample_factor:
-            raise ParameterError('Input signal length={:d} is too short for '
-                                 '{:d}-octave CQT'.format(len(y), n_octaves))
+            raise ParameterError(
+                "Input signal length={:d} is too short for "
+                "{:d}-octave CQT".format(len(y), n_octaves)
+            )
 
         new_sr = sr / float(downsample_factor)
-        y = audio.resample(y, sr, new_sr,
-                           res_type=res_type,
-                           scale=True)
+        y = audio.resample(y, sr, new_sr, res_type=res_type, scale=True)
 
         # If we're not going to length-scale after CQT, we
         # need to compensate for the downsampling factor here
@@ -843,11 +940,28 @@ def __num_two_factors(x):
     return num_twos
 
 
-def griffinlim_cqt(C, n_iter=32, sr=22050, hop_length=512, fmin=None, bins_per_octave=12, tuning=0.0,
-                   filter_scale=1, norm=1, sparsity=0.01, window='hann', scale=True,
-                   pad_mode='reflect', res_type='kaiser_fast', dtype=np.float32,
-                   length=None, momentum=0.99, init='random', random_state=None):
-    '''Approximate constant-Q magnitude spectrogram inversion using the "fast" Griffin-Lim
+def griffinlim_cqt(
+    C,
+    n_iter=32,
+    sr=22050,
+    hop_length=512,
+    fmin=None,
+    bins_per_octave=12,
+    tuning=0.0,
+    filter_scale=1,
+    norm=1,
+    sparsity=0.01,
+    window="hann",
+    scale=True,
+    pad_mode="reflect",
+    res_type="kaiser_fast",
+    dtype=np.float32,
+    length=None,
+    momentum=0.99,
+    init="random",
+    random_state=None,
+):
+    """Approximate constant-Q magnitude spectrogram inversion using the "fast" Griffin-Lim
     algorithm [1]_ [2]_.
 
     Given the magnitude of a constant-Q spectrogram (`C`), the algorithm randomly initializes
@@ -1005,9 +1119,9 @@ def griffinlim_cqt(C, n_iter=32, sr=22050, hop_length=512, fmin=None, bins_per_o
     >>> plt.title('Magnitude-only icqt reconstruction')
     >>> plt.tight_layout()
     >>> plt.show()
-    '''
+    """
     if fmin is None:
-        fmin = note_to_hz('C1')
+        fmin = note_to_hz("C1")
 
     if random_state is None:
         rng = np.random
@@ -1017,14 +1131,18 @@ def griffinlim_cqt(C, n_iter=32, sr=22050, hop_length=512, fmin=None, bins_per_o
         rng = random_state
 
     if momentum > 1:
-        warnings.warn('Griffin-Lim with momentum={} > 1 can be unstable. '
-                      'Proceed with caution!'.format(momentum))
+        warnings.warn(
+            "Griffin-Lim with momentum={} > 1 can be unstable. "
+            "Proceed with caution!".format(momentum)
+        )
     elif momentum < 0:
-        raise ParameterError('griffinlim_cqt() called with momentum={} < 0'.format(momentum))
+        raise ParameterError(
+            "griffinlim_cqt() called with momentum={} < 0".format(momentum)
+        )
 
     # using complex64 will keep the result to minimal necessary precision
     angles = np.empty(C.shape, dtype=np.complex64)
-    if init == 'random':
+    if init == "random":
         # randomly initialize the phase
         angles[:] = np.exp(2j * np.pi * rng.rand(*C.shape))
     elif init is None:
@@ -1034,35 +1152,56 @@ def griffinlim_cqt(C, n_iter=32, sr=22050, hop_length=512, fmin=None, bins_per_o
         raise ParameterError("init={} must either None or 'random'".format(init))
 
     # And initialize the previous iterate to 0
-    rebuilt = 0.
+    rebuilt = 0.0
 
     for _ in range(n_iter):
         # Store the previous iterate
         tprev = rebuilt
 
         # Invert with our current estimate of the phases
-        inverse = icqt(C * angles, sr=sr, hop_length=hop_length,
-                       bins_per_octave=bins_per_octave, fmin=fmin,
-                       tuning=tuning,filter_scale=filter_scale, window=window, length=length,
-                       res_type=res_type, dtype=dtype)
+        inverse = icqt(
+            C * angles,
+            sr=sr,
+            hop_length=hop_length,
+            bins_per_octave=bins_per_octave,
+            fmin=fmin,
+            tuning=tuning,
+            filter_scale=filter_scale,
+            window=window,
+            length=length,
+            res_type=res_type,
+            dtype=dtype,
+        )
 
         # Rebuild the spectrogram
-        rebuilt = cqt(inverse, sr=sr, bins_per_octave=bins_per_octave, n_bins=C.shape[0],
-                      hop_length=hop_length, fmin=fmin, tuning=tuning, filter_scale=filter_scale,
-                      window=window, res_type=res_type)
+        rebuilt = cqt(
+            inverse,
+            sr=sr,
+            bins_per_octave=bins_per_octave,
+            n_bins=C.shape[0],
+            hop_length=hop_length,
+            fmin=fmin,
+            tuning=tuning,
+            filter_scale=filter_scale,
+            window=window,
+            res_type=res_type,
+        )
 
         # Update our phase estimates
         angles[:] = rebuilt - (momentum / (1 + momentum)) * tprev
         angles[:] /= np.abs(angles) + 1e-16
 
     # Return the final phase estimates
-    return icqt(C * angles,
-                sr=sr, hop_length=hop_length,
-                bins_per_octave=bins_per_octave,
-                tuning=tuning,
-                filter_scale=filter_scale,
-                fmin=fmin,
-                window=window,
-                length=length,
-                res_type=res_type,
-                dtype=dtype)
+    return icqt(
+        C * angles,
+        sr=sr,
+        hop_length=hop_length,
+        bins_per_octave=bins_per_octave,
+        tuning=tuning,
+        filter_scale=filter_scale,
+        fmin=fmin,
+        window=window,
+        length=length,
+        res_type=res_type,
+        dtype=dtype,
+    )

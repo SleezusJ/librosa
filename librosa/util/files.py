@@ -6,14 +6,14 @@ import os
 import glob
 import pkg_resources
 
-EXAMPLE_AUDIO = 'example_data/Kevin_MacLeod_-_Vibe_Ace.ogg'
+EXAMPLE_AUDIO = "example_data/Kevin_MacLeod_-_Vibe_Ace.ogg"
 
 
-__all__ = ['example_audio_file', 'find_files']
+__all__ = ["example_audio_file", "find_files"]
 
 
 def example_audio_file():
-    '''Get the path to an included audio example file.
+    """Get the path to an included audio example file.
 
     .. raw:: html
        
@@ -36,14 +36,15 @@ def example_audio_file():
     -------
     filename : str
         Path to the audio example file included with librosa
-    '''
+    """
 
     return pkg_resources.resource_filename(__name__, EXAMPLE_AUDIO)
 
 
-def find_files(directory, ext=None, recurse=True, case_sensitive=False,
-               limit=None, offset=0):
-    '''Get a sorted list of (audio) files in a directory or directory sub-tree.
+def find_files(
+    directory, ext=None, recurse=True, case_sensitive=False, limit=None, offset=0
+):
+    """Get a sorted list of (audio) files in a directory or directory sub-tree.
 
     Examples
     --------
@@ -96,10 +97,10 @@ def find_files(directory, ext=None, recurse=True, case_sensitive=False,
     -------
     files : list of str
         The list of audio files.
-    '''
+    """
 
     if ext is None:
-        ext = ['aac', 'au', 'flac', 'm4a', 'mp3', 'ogg', 'wav']
+        ext = ["aac", "au", "flac", "m4a", "mp3", "ogg", "wav"]
 
     elif isinstance(ext, str):
         ext = [ext]
@@ -132,7 +133,7 @@ def find_files(directory, ext=None, recurse=True, case_sensitive=False,
 
 
 def __get_files(dir_name, extensions):
-    '''Helper function to get files in a single directory'''
+    """Helper function to get files in a single directory"""
 
     # Expand out the directory
     dir_name = os.path.abspath(os.path.expanduser(dir_name))
@@ -140,7 +141,7 @@ def __get_files(dir_name, extensions):
     myfiles = set()
 
     for sub_ext in extensions:
-        globstr = os.path.join(dir_name, '*' + os.path.extsep + sub_ext)
+        globstr = os.path.join(dir_name, "*" + os.path.extsep + sub_ext)
         myfiles |= set(glob.glob(globstr))
 
     return myfiles

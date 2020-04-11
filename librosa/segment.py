@@ -42,20 +42,29 @@ from . import util
 from .filters import diagonal_filter
 from .util.exceptions import ParameterError
 
-__all__ = ['cross_similarity',
-           'recurrence_matrix',
-           'recurrence_to_lag',
-           'lag_to_recurrence',
-           'timelag_filter',
-           'agglomerative',
-           'subsegment',
-           'path_enhance']
+__all__ = [
+    "cross_similarity",
+    "recurrence_matrix",
+    "recurrence_to_lag",
+    "lag_to_recurrence",
+    "timelag_filter",
+    "agglomerative",
+    "subsegment",
+    "path_enhance",
+]
 
 
 @cache(level=30)
-def cross_similarity(data, data_ref, k=None, metric='euclidean',
-                     sparse=False, mode='connectivity', bandwidth=None):
-    '''Compute cross-similarity from one data sequence to a reference sequence.
+def cross_similarity(
+    data,
+    data_ref,
+    k=None,
+    metric="euclidean",
+    sparse=False,
+    mode="connectivity",
+    bandwidth=None,
+):
+    """Compute cross-similarity from one data sequence to a reference sequence.
 
     The output is a matrix `xsim`:
 
@@ -156,7 +165,7 @@ def cross_similarity(data, data_ref, k=None, metric='euclidean',
     >>> plt.title('Affinity recurrence')
     >>> plt.tight_layout()
 
-    '''
+    """
     data_ref = np.atleast_2d(data_ref)
     data = np.atleast_2d(data)
 
@@ -172,10 +181,14 @@ def cross_similarity(data, data_ref, k=None, metric='euclidean',
     n = data.shape[0]
     data = data.reshape((n, -1))
 
-    if mode not in ['connectivity', 'distance', 'affinity']:
-        raise ParameterError(("Invalid mode='{}'. Must be one of "
-                              "['connectivity', 'distance', "
-                              "'affinity']").format(mode))
+    if mode not in ["connectivity", "distance", "affinity"]:
+        raise ParameterError(
+            (
+                "Invalid mode='{}'. Must be one of "
+                "['connectivity', 'distance', "
+                "'affinity']"
+            ).format(mode)
+        )
     if k is None:
         k = min(n_ref, 2 * np.ceil(np.sqrt(n_ref)))
 
@@ -183,28 +196,29 @@ def cross_similarity(data, data_ref, k=None, metric='euclidean',
 
     if bandwidth is not None:
         if bandwidth <= 0:
-            raise ParameterError('Invalid bandwidth={}. '
-                                 'Must be strictly positive.'.format(bandwidth))
+            raise ParameterError(
+                "Invalid bandwidth={}. " "Must be strictly positive.".format(bandwidth)
+            )
 
     # Build the neighbor search object
     # `auto` mode does not work with some choices of metric.  Rather than special-case
     # those here, we instead use a fall-back to brute force if auto fails.
     try:
-        knn = sklearn.neighbors.NearestNeighbors(n_neighbors=min(n_ref, k),
-                                                 metric=metric,
-                                                 algorithm='auto')
+        knn = sklearn.neighbors.NearestNeighbors(
+            n_neighbors=min(n_ref, k), metric=metric, algorithm="auto"
+        )
     except ValueError:
-        knn = sklearn.neighbors.NearestNeighbors(n_neighbors=min(n_ref, k),
-                                                 metric=metric,
-                                                 algorithm='brute')
+        knn = sklearn.neighbors.NearestNeighbors(
+            n_neighbors=min(n_ref, k), metric=metric, algorithm="brute"
+        )
 
     knn.fit(data_ref)
 
     # Get the knn graph
-    if mode == 'affinity':
+    if mode == "affinity":
         # sklearn's nearest neighbor doesn't support affinity,
         # so we use distance here and then do the conversion post-hoc
-        kng_mode = 'distance'
+        kng_mode = "distance"
     else:
         kng_mode = mode
 
@@ -225,9 +239,9 @@ def cross_similarity(data, data_ref, k=None, metric='euclidean',
     xsim = xsim.tocsr()
     xsim.eliminate_zeros()
 
-    if mode == 'connectivity':
+    if mode == "connectivity":
         xsim = xsim.astype(np.bool)
-    elif mode == 'affinity':
+    elif mode == "affinity":
         if bandwidth is None:
             bandwidth = np.nanmedian(xsim.max(axis=1).data)
         xsim.data[:] = np.exp(xsim.data / (-1 * bandwidth))
@@ -242,10 +256,19 @@ def cross_similarity(data, data_ref, k=None, metric='euclidean',
 
 
 @cache(level=30)
-def recurrence_matrix(data, k=None, width=1, metric='euclidean',
-                      sym=False, sparse=False, mode='connectivity',
-                      bandwidth=None, self=False, axis=-1):
-    '''Compute a recurrence matrix from a data matrix.
+def recurrence_matrix(
+    data,
+    k=None,
+    width=1,
+    metric="euclidean",
+    sym=False,
+    sparse=False,
+    mode="connectivity",
+    bandwidth=None,
+    self=False,
+    axis=-1,
+):
+    """Compute a recurrence matrix from a data matrix.
 
     `rec[i, j]` is non-zero if `data[:, i]` is one of `data[:, j]`'s
     k-nearest-neighbors and `|i - j| >= width`
@@ -379,7 +402,7 @@ def recurrence_matrix(data, k=None, width=1, metric='euclidean',
     >>> plt.tight_layout()
     >>> plt.show()
 
-    '''
+    """
 
     data = np.atleast_2d(data)
 
@@ -389,12 +412,20 @@ def recurrence_matrix(data, k=None, width=1, metric='euclidean',
     data = data.reshape((t, -1))
 
     if width < 1 or width > t:
-        raise ParameterError('width={} must be at least 1 and at most data.shape[{}]={}'.format(width, axis, t))
+        raise ParameterError(
+            "width={} must be at least 1 and at most data.shape[{}]={}".format(
+                width, axis, t
+            )
+        )
 
-    if mode not in ['connectivity', 'distance', 'affinity']:
-        raise ParameterError(("Invalid mode='{}'. Must be one of "
-                              "['connectivity', 'distance', "
-                              "'affinity']").format(mode))
+    if mode not in ["connectivity", "distance", "affinity"]:
+        raise ParameterError(
+            (
+                "Invalid mode='{}'. Must be one of "
+                "['connectivity', 'distance', "
+                "'affinity']"
+            ).format(mode)
+        )
     if k is None:
         if t > 2 * width + 1:
             k = 2 * np.ceil(np.sqrt(t - 2 * width + 1))
@@ -403,26 +434,27 @@ def recurrence_matrix(data, k=None, width=1, metric='euclidean',
 
     if bandwidth is not None:
         if bandwidth <= 0:
-            raise ParameterError('Invalid bandwidth={}. '
-                                 'Must be strictly positive.'.format(bandwidth))
+            raise ParameterError(
+                "Invalid bandwidth={}. " "Must be strictly positive.".format(bandwidth)
+            )
 
     k = int(k)
 
     # Build the neighbor search object
     try:
-        knn = sklearn.neighbors.NearestNeighbors(n_neighbors=min(t-1, k + 2 * width),
-                                                 metric=metric,
-                                                 algorithm='auto')
+        knn = sklearn.neighbors.NearestNeighbors(
+            n_neighbors=min(t - 1, k + 2 * width), metric=metric, algorithm="auto"
+        )
     except ValueError:
-        knn = sklearn.neighbors.NearestNeighbors(n_neighbors=min(t-1, k + 2 * width),
-                                                 metric=metric,
-                                                 algorithm='brute')
+        knn = sklearn.neighbors.NearestNeighbors(
+            n_neighbors=min(t - 1, k + 2 * width), metric=metric, algorithm="brute"
+        )
 
     knn.fit(data)
 
     # Get the knn graph
-    if mode == 'affinity':
-        kng_mode = 'distance'
+    if mode == "affinity":
+        kng_mode = "distance"
     else:
         kng_mode = mode
 
@@ -444,9 +476,9 @@ def recurrence_matrix(data, k=None, width=1, metric='euclidean',
         rec[i, idx[k:]] = 0
 
     if self:
-        if mode == 'connectivity':
+        if mode == "connectivity":
             rec.setdiag(1)
-        elif mode == 'affinity':
+        elif mode == "affinity":
             # we need to keep the self-loop in here, but not mess up the
             # bandwidth estimation
             #
@@ -463,9 +495,9 @@ def recurrence_matrix(data, k=None, width=1, metric='euclidean',
     rec = rec.tocsr()
     rec.eliminate_zeros()
 
-    if mode == 'connectivity':
+    if mode == "connectivity":
         rec = rec.astype(np.bool)
-    elif mode == 'affinity':
+    elif mode == "affinity":
         if bandwidth is None:
             bandwidth = np.nanmedian(rec.max(axis=1).data)
         # Set all the negatives back to 0
@@ -484,7 +516,7 @@ def recurrence_matrix(data, k=None, width=1, metric='euclidean',
 
 
 def recurrence_to_lag(rec, pad=True, axis=-1):
-    '''Convert a recurrence matrix into a lag matrix.
+    """Convert a recurrence matrix into a lag matrix.
 
         `lag[i, j] == rec[i+j, j]`
 
@@ -540,13 +572,14 @@ def recurrence_to_lag(rec, pad=True, axis=-1):
     >>> plt.title('Lag (no padding)')
     >>> plt.tight_layout()
     >>> plt.show()
-    '''
+    """
 
     axis = np.abs(axis)
 
     if rec.ndim != 2 or rec.shape[0] != rec.shape[1]:
-        raise ParameterError('non-square recurrence matrix shape: '
-                             '{}'.format(rec.shape))
+        raise ParameterError(
+            "non-square recurrence matrix shape: " "{}".format(rec.shape)
+        )
 
     sparse = scipy.sparse.issparse(rec)
 
@@ -559,14 +592,14 @@ def recurrence_to_lag(rec, pad=True, axis=-1):
         if sparse:
             padding = np.asarray([[1, 0]], dtype=rec.dtype).swapaxes(axis, 0)
             if axis == 0:
-                rec_fmt = 'csr'
+                rec_fmt = "csr"
             else:
-                rec_fmt = 'csc'
+                rec_fmt = "csc"
             rec = scipy.sparse.kron(padding, rec, format=rec_fmt)
         else:
             padding = [(0, 0), (0, 0)]
-            padding[(1-axis)] = (0, t)
-            rec = np.pad(rec, padding, mode='constant')
+            padding[(1 - axis)] = (0, t)
+            rec = np.pad(rec, padding, mode="constant")
 
     lag = util.shear(rec, factor=-1, axis=axis)
 
@@ -577,7 +610,7 @@ def recurrence_to_lag(rec, pad=True, axis=-1):
 
 
 def lag_to_recurrence(lag, axis=-1):
-    '''Convert a lag matrix into a recurrence matrix.
+    """Convert a lag matrix into a recurrence matrix.
 
     Parameters
     ----------
@@ -634,16 +667,17 @@ def lag_to_recurrence(lag, axis=-1):
     >>> plt.tight_layout()
     >>> plt.show()
 
-    '''
+    """
 
     if axis not in [0, 1, -1]:
-        raise ParameterError('Invalid target axis: {}'.format(axis))
+        raise ParameterError("Invalid target axis: {}".format(axis))
 
     axis = np.abs(axis)
 
-    if lag.ndim != 2 or (lag.shape[0] != lag.shape[1] and
-                         lag.shape[1 - axis] != 2 * lag.shape[axis]):
-        raise ParameterError('Invalid lag matrix shape: {}'.format(lag.shape))
+    if lag.ndim != 2 or (
+        lag.shape[0] != lag.shape[1] and lag.shape[1 - axis] != 2 * lag.shape[axis]
+    ):
+        raise ParameterError("Invalid lag matrix shape: {}".format(lag.shape))
 
     # Since lag must be 2-dimensional, abs(axis) = axis
     t = lag.shape[axis]
@@ -656,7 +690,7 @@ def lag_to_recurrence(lag, axis=-1):
 
 
 def timelag_filter(function, pad=True, index=0):
-    '''Filtering in the time-lag domain.
+    """Filtering in the time-lag domain.
 
     This is primarily useful for adapting image filters to operate on
     `recurrence_to_lag` output.
@@ -723,10 +757,10 @@ def timelag_filter(function, pad=True, index=0):
     >>> plt.title('Filtered affinity matrix')
     >>> plt.tight_layout()
     >>> plt.show()
-    '''
+    """
 
     def __my_filter(wrapped_f, *args, **kwargs):
-        '''Decorator to wrap the filter'''
+        """Decorator to wrap the filter"""
         # Map the input data into time-lag space
         args = list(args)
 
@@ -743,7 +777,7 @@ def timelag_filter(function, pad=True, index=0):
 
 @cache(level=30)
 def subsegment(data, frames, n_segments=4, axis=-1):
-    '''Sub-divide a segmentation by feature clustering.
+    """Sub-divide a segmentation by feature clustering.
 
     Given a set of frame boundaries (`frames`), and a data matrix (`data`),
     each successive interval defined by `frames` is partitioned into
@@ -819,21 +853,24 @@ def subsegment(data, frames, n_segments=4, axis=-1):
     >>> plt.tight_layout()
     >>> plt.show()
 
-    '''
+    """
 
     frames = util.fix_frames(frames, x_min=0, x_max=data.shape[axis], pad=True)
 
     if n_segments < 1:
-        raise ParameterError('n_segments must be a positive integer')
+        raise ParameterError("n_segments must be a positive integer")
 
     boundaries = []
     idx_slices = [slice(None)] * data.ndim
 
     for seg_start, seg_end in zip(frames[:-1], frames[1:]):
         idx_slices[axis] = slice(seg_start, seg_end)
-        boundaries.extend(seg_start + agglomerative(data[tuple(idx_slices)],
-                                                    min(seg_end - seg_start, n_segments),
-                                                    axis=axis))
+        boundaries.extend(
+            seg_start
+            + agglomerative(
+                data[tuple(idx_slices)], min(seg_end - seg_start, n_segments), axis=axis
+            )
+        )
 
     return np.ascontiguousarray(boundaries)
 
@@ -911,27 +948,34 @@ def agglomerative(data, k, clusterer=None, axis=-1):
 
     if clusterer is None:
         # Connect the temporal connectivity graph
-        grid = sklearn.feature_extraction.image.grid_to_graph(n_x=n,
-                                                              n_y=1, n_z=1)
+        grid = sklearn.feature_extraction.image.grid_to_graph(n_x=n, n_y=1, n_z=1)
 
         # Instantiate the clustering object
-        clusterer = sklearn.cluster.AgglomerativeClustering(n_clusters=k,
-                                                            connectivity=grid,
-                                                            memory=cache.memory)
+        clusterer = sklearn.cluster.AgglomerativeClustering(
+            n_clusters=k, connectivity=grid, memory=cache.memory
+        )
 
     # Fit the model
     clusterer.fit(data)
 
     # Find the change points from the labels
     boundaries = [0]
-    boundaries.extend(
-        list(1 + np.nonzero(np.diff(clusterer.labels_))[0].astype(int)))
+    boundaries.extend(list(1 + np.nonzero(np.diff(clusterer.labels_))[0].astype(int)))
     return np.asarray(boundaries)
 
 
-def path_enhance(R, n, window='hann', max_ratio=2.0, min_ratio=None, n_filters=7,
-                 zero_mean=False, clip=True, **kwargs):
-    '''Multi-angle path enhancement for self- and cross-similarity matrices.
+def path_enhance(
+    R,
+    n,
+    window="hann",
+    max_ratio=2.0,
+    min_ratio=None,
+    n_filters=7,
+    zero_mean=False,
+    clip=True,
+    **kwargs
+):
+    """Multi-angle path enhancement for self- and cross-similarity matrices.
 
     This function convolves multiple diagonal smoothing filters with a self-similarity (or
     recurrence) matrix R, and aggregates the result by an element-wise maximum.
@@ -1040,23 +1084,28 @@ def path_enhance(R, n, window='hann', max_ratio=2.0, min_ratio=None, n_filters=7
     >>> plt.title('Multi-angle enhanced recurrence')
     >>> plt.tight_layout()
     >>> plt.show()
-    '''
+    """
 
     if min_ratio is None:
-        min_ratio = 1./max_ratio
+        min_ratio = 1.0 / max_ratio
     elif min_ratio > max_ratio:
-        raise ParameterError('min_ratio={} cannot exceed max_ratio={}'.format(min_ratio, max_ratio))
+        raise ParameterError(
+            "min_ratio={} cannot exceed max_ratio={}".format(min_ratio, max_ratio)
+        )
 
     R_smooth = None
-    for ratio in np.logspace(np.log2(min_ratio), np.log2(max_ratio), num=n_filters, base=2):
+    for ratio in np.logspace(
+        np.log2(min_ratio), np.log2(max_ratio), num=n_filters, base=2
+    ):
         kernel = diagonal_filter(window, n, slope=ratio, zero_mean=zero_mean)
 
         if R_smooth is None:
             R_smooth = scipy.ndimage.convolve(R, kernel, **kwargs)
         else:
             # Compute the point-wise maximum in-place
-            np.maximum(R_smooth, scipy.ndimage.convolve(R, kernel, **kwargs),
-                       out=R_smooth)
+            np.maximum(
+                R_smooth, scipy.ndimage.convolve(R, kernel, **kwargs), out=R_smooth
+            )
 
     if clip:
         # Clip the output in-place

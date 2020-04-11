@@ -13,27 +13,36 @@ from .._cache import cache
 from .exceptions import ParameterError
 
 # Constrain STFT block sizes to 256 KB
-MAX_MEM_BLOCK = 2**8 * 2**10
+MAX_MEM_BLOCK = 2 ** 8 * 2 ** 10
 
-__all__ = ['MAX_MEM_BLOCK',
-           'frame', 'pad_center', 'fix_length',
-           'valid_audio', 'valid_int', 'valid_intervals',
-           'fix_frames',
-           'axis_sort', 'localmax', 'normalize',
-           'peak_pick',
-           'sparsify_rows',
-           'shear', 'stack',
-           'fill_off_diagonal',
-           'index_to_slice',
-           'sync',
-           'softmask',
-           'buf_to_float',
-           'tiny',
-           'cyclic_gradient']
+__all__ = [
+    "MAX_MEM_BLOCK",
+    "frame",
+    "pad_center",
+    "fix_length",
+    "valid_audio",
+    "valid_int",
+    "valid_intervals",
+    "fix_frames",
+    "axis_sort",
+    "localmax",
+    "normalize",
+    "peak_pick",
+    "sparsify_rows",
+    "shear",
+    "stack",
+    "fill_off_diagonal",
+    "index_to_slice",
+    "sync",
+    "softmask",
+    "buf_to_float",
+    "tiny",
+    "cyclic_gradient",
+]
 
 
 def frame(x, frame_length=2048, hop_length=512, axis=-1):
-    '''Slice a data array into (overlapping) frames.
+    """Slice a data array into (overlapping) frames.
 
     This implementation uses low-level stride manipulation to avoid
     making a copy of the data.  The resulting frame representation
@@ -162,18 +171,21 @@ def frame(x, frame_length=2048, hop_length=512, axis=-1):
     >>> # The second patch contains frames 16 to 16+32=48, and so on
     >>> np.allclose(S_patch[:, :, 1], S[:, 16:48])
     True
-    '''
+    """
 
     if not isinstance(x, np.ndarray):
-        raise ParameterError('Input must be of type numpy.ndarray, '
-                             'given type(x)={}'.format(type(x)))
+        raise ParameterError(
+            "Input must be of type numpy.ndarray, " "given type(x)={}".format(type(x))
+        )
 
     if x.shape[axis] < frame_length:
-        raise ParameterError('Input is too short (n={:d})'
-                             ' for frame_length={:d}'.format(x.shape[axis], frame_length))
+        raise ParameterError(
+            "Input is too short (n={:d})"
+            " for frame_length={:d}".format(x.shape[axis], frame_length)
+        )
 
     if hop_length < 1:
-        raise ParameterError('Invalid hop_length: {:d}'.format(hop_length))
+        raise ParameterError("Invalid hop_length: {:d}".format(hop_length))
 
     n_frames = 1 + (x.shape[axis] - frame_length) // hop_length
     strides = np.asarray(x.strides)
@@ -181,29 +193,33 @@ def frame(x, frame_length=2048, hop_length=512, axis=-1):
     new_stride = np.prod(strides[strides > 0] // x.itemsize) * x.itemsize
 
     if axis == -1:
-        if not x.flags['F_CONTIGUOUS']:
-            raise ParameterError('Input array must be F-contiguous '
-                                 'for framing along axis={}'.format(axis))
+        if not x.flags["F_CONTIGUOUS"]:
+            raise ParameterError(
+                "Input array must be F-contiguous "
+                "for framing along axis={}".format(axis)
+            )
 
         shape = list(x.shape)[:-1] + [frame_length, n_frames]
         strides = list(strides) + [hop_length * new_stride]
 
     elif axis == 0:
-        if not x.flags['C_CONTIGUOUS']:
-            raise ParameterError('Input array must be C-contiguous '
-                                 'for framing along axis={}'.format(axis))
+        if not x.flags["C_CONTIGUOUS"]:
+            raise ParameterError(
+                "Input array must be C-contiguous "
+                "for framing along axis={}".format(axis)
+            )
 
         shape = [n_frames, frame_length] + list(x.shape)[1:]
         strides = [hop_length * new_stride] + list(strides)
     else:
-        raise ParameterError('Frame axis={} must be either 0 or -1'.format(axis))
+        raise ParameterError("Frame axis={} must be either 0 or -1".format(axis))
 
     return as_strided(x, shape=shape, strides=strides)
 
 
 @cache(level=20)
 def valid_audio(y, mono=True):
-    '''Validate whether a variable contains valid, mono audio data.
+    """Validate whether a variable contains valid, mono audio data.
 
 
     Parameters
@@ -252,34 +268,40 @@ def valid_audio(y, mono=True):
     stack
     numpy.asfortranarray
     numpy.float32
-    '''
+    """
 
     if not isinstance(y, np.ndarray):
-        raise ParameterError('Audio data must be of type numpy.ndarray')
+        raise ParameterError("Audio data must be of type numpy.ndarray")
 
     if not np.issubdtype(y.dtype, np.floating):
-        raise ParameterError('Audio data must be floating-point')
+        raise ParameterError("Audio data must be floating-point")
 
     if mono and y.ndim != 1:
-        raise ParameterError('Invalid shape for monophonic audio: '
-                             'ndim={:d}, shape={}'.format(y.ndim, y.shape))
+        raise ParameterError(
+            "Invalid shape for monophonic audio: "
+            "ndim={:d}, shape={}".format(y.ndim, y.shape)
+        )
 
     elif y.ndim > 2 or y.ndim == 0:
-        raise ParameterError('Audio data must have shape (samples,) or (channels, samples). '
-                             'Received shape={}'.format(y.shape))
+        raise ParameterError(
+            "Audio data must have shape (samples,) or (channels, samples). "
+            "Received shape={}".format(y.shape)
+        )
 
     if not np.isfinite(y).all():
-        raise ParameterError('Audio buffer is not finite everywhere')
+        raise ParameterError("Audio buffer is not finite everywhere")
 
     if not y.flags["F_CONTIGUOUS"]:
-        raise ParameterError('Audio buffer is not Fortran-contiguous. '
-            'Use numpy.asfortranarray to ensure Fortran contiguity.')
+        raise ParameterError(
+            "Audio buffer is not Fortran-contiguous. "
+            "Use numpy.asfortranarray to ensure Fortran contiguity."
+        )
 
     return True
 
 
 def valid_int(x, cast=None):
-    '''Ensure that an input value is integer-typed.
+    """Ensure that an input value is integer-typed.
     This is primarily useful for ensuring integrable-valued
     array indices.
 
@@ -301,19 +323,19 @@ def valid_int(x, cast=None):
     ------
     ParameterError
         If `cast` is provided and is not callable.
-    '''
+    """
 
     if cast is None:
         cast = np.floor
 
     if not callable(cast):
-        raise ParameterError('cast parameter must be callable')
+        raise ParameterError("cast parameter must be callable")
 
     return int(cast(x))
 
 
 def valid_intervals(intervals):
-    '''Ensure that an array is a valid representation of time intervals:
+    """Ensure that an array is a valid representation of time intervals:
 
         - intervals.ndim == 2
         - intervals.shape[1] == 2
@@ -328,19 +350,21 @@ def valid_intervals(intervals):
     -------
     valid : bool
         True if `intervals` passes validation.
-    '''
+    """
 
     if intervals.ndim != 2 or intervals.shape[-1] != 2:
-        raise ParameterError('intervals must have shape (n, 2)')
+        raise ParameterError("intervals must have shape (n, 2)")
 
     if np.any(intervals[:, 0] > intervals[:, 1]):
-        raise ParameterError('intervals={} must have non-negative durations'.format(intervals))
+        raise ParameterError(
+            "intervals={} must have non-negative durations".format(intervals)
+        )
 
     return True
 
 
 def pad_center(data, size, axis=-1, **kwargs):
-    '''Wrapper for np.pad to automatically center an array prior to padding.
+    """Wrapper for np.pad to automatically center an array prior to padding.
     This is analogous to `str.center()`
 
     Examples
@@ -394,9 +418,9 @@ def pad_center(data, size, axis=-1, **kwargs):
     See Also
     --------
     numpy.pad
-    '''
+    """
 
-    kwargs.setdefault('mode', 'constant')
+    kwargs.setdefault("mode", "constant")
 
     n = data.shape[axis]
 
@@ -406,14 +430,15 @@ def pad_center(data, size, axis=-1, **kwargs):
     lengths[axis] = (lpad, int(size - n - lpad))
 
     if lpad < 0:
-        raise ParameterError(('Target size ({:d}) must be '
-                              'at least input size ({:d})').format(size, n))
+        raise ParameterError(
+            ("Target size ({:d}) must be " "at least input size ({:d})").format(size, n)
+        )
 
     return np.pad(data, lengths, **kwargs)
 
 
 def fix_length(data, size, axis=-1, **kwargs):
-    '''Fix the length an array `data` to exactly `size`.
+    """Fix the length an array `data` to exactly `size`.
 
     If `data.shape[axis] < n`, pad according to the provided kwargs.
     By default, `data` is padded with trailing zeros.
@@ -454,9 +479,9 @@ def fix_length(data, size, axis=-1, **kwargs):
     See Also
     --------
     numpy.pad
-    '''
+    """
 
-    kwargs.setdefault('mode', 'constant')
+    kwargs.setdefault("mode", "constant")
 
     n = data.shape[axis]
 
@@ -474,7 +499,7 @@ def fix_length(data, size, axis=-1, **kwargs):
 
 
 def fix_frames(frames, x_min=0, x_max=None, pad=True):
-    '''Fix a list of frames to lie within [x_min, x_max]
+    """Fix a list of frames to lie within [x_min, x_max]
 
     Examples
     --------
@@ -531,12 +556,12 @@ def fix_frames(frames, x_min=0, x_max=None, pad=True):
     ------
     ParameterError
         If `frames` contains negative values
-    '''
+    """
 
     frames = np.asarray(frames)
 
     if np.any(frames < 0):
-        raise ParameterError('Negative frame index detected')
+        raise ParameterError("Negative frame index detected")
 
     if pad and (x_min is not None or x_max is not None):
         frames = np.clip(frames, x_min, x_max)
@@ -559,7 +584,7 @@ def fix_frames(frames, x_min=0, x_max=None, pad=True):
 
 
 def axis_sort(S, axis=-1, index=False, value=None):
-    '''Sort an array along its rows or columns.
+    """Sort an array along its rows or columns.
 
     Examples
     --------
@@ -636,15 +661,15 @@ def axis_sort(S, axis=-1, index=False, value=None):
     ------
     ParameterError
         If `S` does not have exactly 2 dimensions (`S.ndim != 2`)
-    '''
+    """
 
     if value is None:
         value = np.argmax
 
     if S.ndim != 2:
-        raise ParameterError('axis_sort is only defined for 2D arrays')
+        raise ParameterError("axis_sort is only defined for 2D arrays")
 
-    bin_idx = value(S, axis=np.mod(1-axis, S.ndim))
+    bin_idx = value(S, axis=np.mod(1 - axis, S.ndim))
     idx = np.argsort(bin_idx)
 
     sort_slice = [slice(None)] * S.ndim
@@ -658,7 +683,7 @@ def axis_sort(S, axis=-1, index=False, value=None):
 
 @cache(level=40)
 def normalize(S, norm=np.inf, axis=0, threshold=None, fill=None):
-    '''Normalize an array along a chosen axis.
+    """Normalize an array along a chosen axis.
 
     Given a norm (described below) and a target axis, the input
     array is scaled so that
@@ -811,21 +836,22 @@ def normalize(S, norm=np.inf, axis=0, threshold=None, fill=None):
            [-0.1  ,  0.167, -0.25 ,  0.25 ],
            [ 0.   ,  0.   ,  0.   ,  0.25 ],
            [ 0.1  ,  0.167,  0.25 ,  0.25 ]])
-    '''
+    """
 
     # Avoid div-by-zero
     if threshold is None:
         threshold = tiny(S)
 
     elif threshold <= 0:
-        raise ParameterError('threshold={} must be strictly '
-                             'positive'.format(threshold))
+        raise ParameterError(
+            "threshold={} must be strictly " "positive".format(threshold)
+        )
 
     if fill not in [None, False, True]:
-        raise ParameterError('fill={} must be None or boolean'.format(fill))
+        raise ParameterError("fill={} must be None or boolean".format(fill))
 
     if not np.all(np.isfinite(S)):
-        raise ParameterError('Input must be finite')
+        raise ParameterError("Input must be finite")
 
     # All norms only depend on magnitude, let's do that first
     mag = np.abs(S).astype(np.float)
@@ -841,23 +867,23 @@ def normalize(S, norm=np.inf, axis=0, threshold=None, fill=None):
 
     elif norm == 0:
         if fill is True:
-            raise ParameterError('Cannot normalize with norm=0 and fill=True')
+            raise ParameterError("Cannot normalize with norm=0 and fill=True")
 
         length = np.sum(mag > 0, axis=axis, keepdims=True, dtype=mag.dtype)
 
     elif np.issubdtype(type(norm), np.number) and norm > 0:
-        length = np.sum(mag**norm, axis=axis, keepdims=True)**(1./norm)
+        length = np.sum(mag ** norm, axis=axis, keepdims=True) ** (1.0 / norm)
 
         if axis is None:
-            fill_norm = mag.size**(-1./norm)
+            fill_norm = mag.size ** (-1.0 / norm)
         else:
-            fill_norm = mag.shape[axis]**(-1./norm)
+            fill_norm = mag.shape[axis] ** (-1.0 / norm)
 
     elif norm is None:
         return S
 
     else:
-        raise ParameterError('Unsupported norm: {}'.format(repr(norm)))
+        raise ParameterError("Unsupported norm: {}".format(repr(norm)))
 
     # indices where norm is below the threshold
     small_idx = length < threshold
@@ -931,7 +957,7 @@ def localmax(x, axis=0):
     paddings = [(0, 0)] * x.ndim
     paddings[axis] = (1, 1)
 
-    x_pad = np.pad(x, paddings, mode='edge')
+    x_pad = np.pad(x, paddings, mode="edge")
 
     inds1 = [slice(None)] * x.ndim
     inds1[axis] = slice(0, -2)
@@ -943,7 +969,7 @@ def localmax(x, axis=0):
 
 
 def peak_pick(x, pre_max, post_max, pre_avg, post_avg, delta, wait):
-    '''Uses a flexible heuristic to pick peaks in a signal.
+    """Uses a flexible heuristic to pick peaks in a signal.
 
     A sample n is selected as an peak if the corresponding x[n]
     fulfills the following three conditions:
@@ -1024,25 +1050,25 @@ def peak_pick(x, pre_max, post_max, pre_avg, post_avg, delta, wait):
     >>> plt.axis('tight')
     >>> plt.tight_layout()
     >>> plt.show()
-    '''
+    """
 
     if pre_max < 0:
-        raise ParameterError('pre_max must be non-negative')
+        raise ParameterError("pre_max must be non-negative")
     if pre_avg < 0:
-        raise ParameterError('pre_avg must be non-negative')
+        raise ParameterError("pre_avg must be non-negative")
     if delta < 0:
-        raise ParameterError('delta must be non-negative')
+        raise ParameterError("delta must be non-negative")
     if wait < 0:
-        raise ParameterError('wait must be non-negative')
+        raise ParameterError("wait must be non-negative")
 
     if post_max <= 0:
-        raise ParameterError('post_max must be positive')
+        raise ParameterError("post_max must be positive")
 
     if post_avg <= 0:
-        raise ParameterError('post_avg must be positive')
+        raise ParameterError("post_avg must be positive")
 
     if x.ndim != 1:
-        raise ParameterError('input array must be one-dimensional')
+        raise ParameterError("input array must be one-dimensional")
 
     # Ensure valid index types
     pre_max = valid_int(pre_max, cast=np.ceil)
@@ -1056,19 +1082,18 @@ def peak_pick(x, pre_max, post_max, pre_avg, post_avg, delta, wait):
     max_origin = np.ceil(0.5 * (pre_max - post_max))
     # Using mode='constant' and cval=x.min() effectively truncates
     # the sliding window at the boundaries
-    mov_max = scipy.ndimage.filters.maximum_filter1d(x, int(max_length),
-                                                     mode='constant',
-                                                     origin=int(max_origin),
-                                                     cval=x.min())
+    mov_max = scipy.ndimage.filters.maximum_filter1d(
+        x, int(max_length), mode="constant", origin=int(max_origin), cval=x.min()
+    )
 
     # Get the mean of the signal over a sliding window
     avg_length = pre_avg + post_avg
     avg_origin = np.ceil(0.5 * (pre_avg - post_avg))
     # Here, there is no mode which results in the behavior we want,
     # so we'll correct below.
-    mov_avg = scipy.ndimage.filters.uniform_filter1d(x, int(avg_length),
-                                                     mode='nearest',
-                                                     origin=int(avg_origin))
+    mov_avg = scipy.ndimage.filters.uniform_filter1d(
+        x, int(avg_length), mode="nearest", origin=int(avg_origin)
+    )
 
     # Correct sliding average at the beginning
     n = 0
@@ -1078,7 +1103,7 @@ def peak_pick(x, pre_max, post_max, pre_avg, post_avg, delta, wait):
         # with truncation
         start = n - pre_avg
         start = start if start > 0 else 0
-        mov_avg[n] = np.mean(x[start:n + post_avg])
+        mov_avg[n] = np.mean(x[start : n + post_avg])
         n += 1
     # Correct sliding average at the end
     n = x.shape[0] - post_avg
@@ -1087,7 +1112,7 @@ def peak_pick(x, pre_max, post_max, pre_avg, post_avg, delta, wait):
     while n < x.shape[0]:
         start = n - pre_avg
         start = start if start > 0 else 0
-        mov_avg[n] = np.mean(x[start:n + post_avg])
+        mov_avg[n] = np.mean(x[start : n + post_avg])
         n += 1
 
     # First mask out all entries not equal to the local max
@@ -1114,7 +1139,7 @@ def peak_pick(x, pre_max, post_max, pre_avg, post_avg, delta, wait):
 
 @cache(level=40)
 def sparsify_rows(x, quantile=0.01):
-    '''
+    """
     Return a row-sparse matrix approximating the input `x`.
 
     Parameters
@@ -1176,17 +1201,19 @@ def sparsify_rows(x, quantile=0.01):
               0.977,  0.997,  0.997,  0.977,  0.937,  0.879,  0.806,
               0.72 ,  0.625,  0.525,  0.424,  0.326,  0.   ,  0.   ,
               0.   ,  0.   ,  0.   ,  0.   ]])
-    '''
+    """
 
     if x.ndim == 1:
         x = x.reshape((1, -1))
 
     elif x.ndim > 2:
-        raise ParameterError('Input must have 2 or fewer dimensions. '
-                             'Provided x.shape={}.'.format(x.shape))
+        raise ParameterError(
+            "Input must have 2 or fewer dimensions. "
+            "Provided x.shape={}.".format(x.shape)
+        )
 
     if not 0.0 <= quantile < 1:
-        raise ParameterError('Invalid quantile {:.2f}'.format(quantile))
+        raise ParameterError("Invalid quantile {:.2f}".format(quantile))
 
     x_sparse = scipy.sparse.lil_matrix(x.shape, dtype=x.dtype)
 
@@ -1232,17 +1259,17 @@ def buf_to_float(x, n_bytes=2, dtype=np.float32):
     """
 
     # Invert the scale of the data
-    scale = 1./float(1 << ((8 * n_bytes) - 1))
+    scale = 1.0 / float(1 << ((8 * n_bytes) - 1))
 
     # Construct the format string
-    fmt = '<i{:d}'.format(n_bytes)
+    fmt = "<i{:d}".format(n_bytes)
 
     # Rescale and format the data buffer
     return scale * np.frombuffer(x, fmt).astype(dtype)
 
 
 def index_to_slice(idx, idx_min=None, idx_max=None, step=None, pad=True):
-    '''Generate a slice array from an index array.
+    """Generate a slice array from an index array.
 
     Parameters
     ----------
@@ -1288,7 +1315,7 @@ def index_to_slice(idx, idx_min=None, idx_max=None, step=None, pad=True):
     ...                             idx_min=0, idx_max=100, step=5)
     [slice(0, 20, 5), slice(20, 35, 5), slice(35, 50, 5), slice(50, 65, 5), slice(65, 80, 5),
      slice(80, 95, 5), slice(95, 100, 5)]
-    '''
+    """
 
     # First, normalize the index set
     idx_fixed = fix_frames(idx, idx_min, idx_max, pad=pad)
@@ -1409,12 +1436,14 @@ def sync(data, idx, aggregate=None, pad=True, axis=-1):
     elif np.all([np.issubdtype(type(_), np.integer) for _ in idx]):
         slices = index_to_slice(np.asarray(idx), 0, shape[axis], pad=pad)
     else:
-        raise ParameterError('Invalid index set: {}'.format(idx))
+        raise ParameterError("Invalid index set: {}".format(idx))
 
     agg_shape = list(shape)
     agg_shape[axis] = len(slices)
 
-    data_agg = np.empty(agg_shape, order='F' if np.isfortran(data) else 'C', dtype=data.dtype)
+    data_agg = np.empty(
+        agg_shape, order="F" if np.isfortran(data) else "C", dtype=data.dtype
+    )
 
     idx_in = [slice(None)] * data.ndim
     idx_agg = [slice(None)] * data_agg.ndim
@@ -1428,7 +1457,7 @@ def sync(data, idx, aggregate=None, pad=True, axis=-1):
 
 
 def softmask(X, X_ref, power=1, split_zeros=False):
-    '''Robustly compute a softmask operation.
+    """Robustly compute a softmask operation.
 
         `M = X**power / (X**power + X_ref**power)`
 
@@ -1507,16 +1536,15 @@ def softmask(X, X_ref, power=1, split_zeros=False):
     array([[ True,  True,  True],
            [ True,  True,  True],
            [False, False,  True]], dtype=bool)
-    '''
+    """
     if X.shape != X_ref.shape:
-        raise ParameterError('Shape mismatch: {}!={}'.format(X.shape,
-                                                             X_ref.shape))
+        raise ParameterError("Shape mismatch: {}!={}".format(X.shape, X_ref.shape))
 
     if np.any(X < 0) or np.any(X_ref < 0):
-        raise ParameterError('X and X_ref must be non-negative')
+        raise ParameterError("X and X_ref must be non-negative")
 
     if power <= 0:
-        raise ParameterError('power must be strictly positive')
+        raise ParameterError("power must be strictly positive")
 
     # We're working with ints, cast to float.
     dtype = X.dtype
@@ -1525,13 +1553,13 @@ def softmask(X, X_ref, power=1, split_zeros=False):
 
     # Re-scale the input arrays relative to the larger value
     Z = np.maximum(X, X_ref).astype(dtype)
-    bad_idx = (Z < np.finfo(dtype).tiny)
+    bad_idx = Z < np.finfo(dtype).tiny
     Z[bad_idx] = 1
 
     # For finite power, compute the softmask
     if np.isfinite(power):
-        mask = (X / Z)**power
-        ref_mask = (X_ref / Z)**power
+        mask = (X / Z) ** power
+        ref_mask = (X_ref / Z) ** power
         good_idx = ~bad_idx
         mask[good_idx] /= mask[good_idx] + ref_mask[good_idx]
         # Wherever energy is below energy in both inputs, split the mask
@@ -1547,7 +1575,7 @@ def softmask(X, X_ref, power=1, split_zeros=False):
 
 
 def tiny(x):
-    '''Compute the tiny-value corresponding to an input's data type.
+    """Compute the tiny-value corresponding to an input's data type.
 
     This is the smallest "usable" number representable in `x`'s
     data type (e.g., float32).
@@ -1599,13 +1627,15 @@ def tiny(x):
 
     >>> librosa.util.tiny(5)
     1.1754944e-38
-    '''
+    """
 
     # Make sure we have an array view
     x = np.asarray(x)
 
     # Only floating types generate a tiny
-    if np.issubdtype(x.dtype, np.floating) or np.issubdtype(x.dtype, np.complexfloating):
+    if np.issubdtype(x.dtype, np.floating) or np.issubdtype(
+        x.dtype, np.complexfloating
+    ):
         dtype = x.dtype
     else:
         dtype = np.float32
@@ -1680,7 +1710,7 @@ def fill_off_diagonal(x, radius, value=0):
 
 
 def cyclic_gradient(data, edge_order=1, axis=-1):
-    '''Estimate the gradient of a function over a uniformly sampled,
+    """Estimate the gradient of a function over a uniformly sampled,
     periodic domain.
 
     This is essentially the same as `np.gradient`, except that edge effects
@@ -1730,11 +1760,11 @@ def cyclic_gradient(data, edge_order=1, axis=-1):
     >>> plt.xlim([0, np.pi/16])
     >>> plt.ylim([-0.025, 0.025])
     >>> plt.show()
-    '''
+    """
     # Wrap-pad the data along the target axis by `edge_order` on each side
     padding = [(0, 0)] * data.ndim
     padding[axis] = (edge_order, edge_order)
-    data_pad = np.pad(data, padding, mode='wrap')
+    data_pad = np.pad(data, padding, mode="wrap")
 
     # Compute the gradient
     grad = np.gradient(data_pad, edge_order=edge_order, axis=axis)
@@ -1747,7 +1777,7 @@ def cyclic_gradient(data, edge_order=1, axis=-1):
 
 @numba.jit(nopython=True, cache=True)
 def __shear_dense(X, factor=+1, axis=-1):
-    '''Numba-accelerated shear for dense (ndarray) arrays'''
+    """Numba-accelerated shear for dense (ndarray) arrays"""
 
     if axis == 0:
         X = X.T
@@ -1764,12 +1794,12 @@ def __shear_dense(X, factor=+1, axis=-1):
 
 
 def __shear_sparse(X, factor=+1, axis=-1):
-    '''Fast shearing for sparse matrices
+    """Fast shearing for sparse matrices
 
     Shearing is performed using CSC array indices,
     and the result is converted back to whatever sparse format
     the data was originally provided in.
-    '''
+    """
     fmt = X.format
     if axis == 0:
         X = X.T
@@ -1793,7 +1823,7 @@ def __shear_sparse(X, factor=+1, axis=-1):
 
 
 def shear(X, factor=1, axis=-1):
-    '''Shear a matrix by a given factor.
+    """Shear a matrix by a given factor.
 
     The `n`th column `X[:, n]` will be displaced (rolled)
     by `factor * n`.
@@ -1835,10 +1865,10 @@ def shear(X, factor=1, axis=-1):
     array([[1., 0., 0.],
            [0., 0., 1.],
            [0., 1., 0.]])
-    '''
+    """
 
     if not np.issubdtype(type(factor), np.integer):
-        raise ParameterError('factor={} must be integer-valued'.format(factor))
+        raise ParameterError("factor={} must be integer-valued".format(factor))
 
     if scipy.sparse.isspmatrix(X):
         return __shear_sparse(X, factor=factor, axis=axis)
@@ -1847,7 +1877,7 @@ def shear(X, factor=1, axis=-1):
 
 
 def stack(arrays, axis=0):
-    '''Stack one or more arrays along a target axis.
+    """Stack one or more arrays along a target axis.
 
     This function is similar to `np.stack`, except that memory contiguity is
     retained when stacking along the first dimension.
@@ -1924,13 +1954,13 @@ def stack(arrays, axis=0):
       ALIGNED : True
       WRITEBACKIFCOPY : False
       UPDATEIFCOPY : False
-    '''
+    """
 
     shapes = {arr.shape for arr in arrays}
     if len(shapes) > 1:
-        raise ParameterError('all input arrays must have the same shape')
+        raise ParameterError("all input arrays must have the same shape")
     elif len(shapes) < 1:
-        raise ParameterError('at least one input array must be provided for stack')
+        raise ParameterError("at least one input array must be provided for stack")
 
     shape_in = shapes.pop()
 
@@ -1944,7 +1974,7 @@ def stack(arrays, axis=0):
         dtype = np.find_common_type([arr.dtype for arr in arrays], [])
 
         # Allocate an empty array of the right shape and type
-        result = np.empty(shape, dtype=dtype, order='F')
+        result = np.empty(shape, dtype=dtype, order="F")
 
         # Stack into the preallocated buffer
         np.stack(arrays, axis=axis, out=result)

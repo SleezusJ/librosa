@@ -50,66 +50,78 @@ from .util.exceptions import ParameterError
 from .core.time_frequency import note_to_hz, hz_to_midi, midi_to_hz, hz_to_octs
 from .core.time_frequency import fft_frequencies, mel_frequencies
 
-__all__ = ['mel',
-           'chroma',
-           'constant_q',
-           'constant_q_lengths',
-           'cq_to_chroma',
-           'window_bandwidth',
-           'get_window',
-           'mr_frequencies',
-           'semitone_filterbank',
-           'window_sumsquare',
-           'diagonal_filter']
+__all__ = [
+    "mel",
+    "chroma",
+    "constant_q",
+    "constant_q_lengths",
+    "cq_to_chroma",
+    "window_bandwidth",
+    "get_window",
+    "mr_frequencies",
+    "semitone_filterbank",
+    "window_sumsquare",
+    "diagonal_filter",
+]
 
 
 # Dictionary of window function bandwidths
 
-WINDOW_BANDWIDTHS = {'bart': 1.3334961334912805,
-                     'barthann': 1.4560255965133932,
-                     'bartlett': 1.3334961334912805,
-                     'bkh': 2.0045975283585014,
-                     'black': 1.7269681554262326,
-                     'blackharr': 2.0045975283585014,
-                     'blackman': 1.7269681554262326,
-                     'blackmanharris': 2.0045975283585014,
-                     'blk': 1.7269681554262326,
-                     'bman': 1.7859588613860062,
-                     'bmn': 1.7859588613860062,
-                     'bohman': 1.7859588613860062,
-                     'box': 1.0,
-                     'boxcar': 1.0,
-                     'brt': 1.3334961334912805,
-                     'brthan': 1.4560255965133932,
-                     'bth': 1.4560255965133932,
-                     'cosine': 1.2337005350199792,
-                     'flat': 2.7762255046484143,
-                     'flattop': 2.7762255046484143,
-                     'flt': 2.7762255046484143,
-                     'halfcosine': 1.2337005350199792,
-                     'ham': 1.3629455320350348,
-                     'hamm': 1.3629455320350348,
-                     'hamming': 1.3629455320350348,
-                     'han': 1.50018310546875,
-                     'hann': 1.50018310546875,
-                     'hanning': 1.50018310546875,
-                     'nut': 1.9763500280946082,
-                     'nutl': 1.9763500280946082,
-                     'nuttall': 1.9763500280946082,
-                     'ones': 1.0,
-                     'par': 1.9174603174603191,
-                     'parz': 1.9174603174603191,
-                     'parzen': 1.9174603174603191,
-                     'rect': 1.0,
-                     'rectangular': 1.0,
-                     'tri': 1.3331706523555851,
-                     'triang': 1.3331706523555851,
-                     'triangle': 1.3331706523555851}
+WINDOW_BANDWIDTHS = {
+    "bart": 1.3334961334912805,
+    "barthann": 1.4560255965133932,
+    "bartlett": 1.3334961334912805,
+    "bkh": 2.0045975283585014,
+    "black": 1.7269681554262326,
+    "blackharr": 2.0045975283585014,
+    "blackman": 1.7269681554262326,
+    "blackmanharris": 2.0045975283585014,
+    "blk": 1.7269681554262326,
+    "bman": 1.7859588613860062,
+    "bmn": 1.7859588613860062,
+    "bohman": 1.7859588613860062,
+    "box": 1.0,
+    "boxcar": 1.0,
+    "brt": 1.3334961334912805,
+    "brthan": 1.4560255965133932,
+    "bth": 1.4560255965133932,
+    "cosine": 1.2337005350199792,
+    "flat": 2.7762255046484143,
+    "flattop": 2.7762255046484143,
+    "flt": 2.7762255046484143,
+    "halfcosine": 1.2337005350199792,
+    "ham": 1.3629455320350348,
+    "hamm": 1.3629455320350348,
+    "hamming": 1.3629455320350348,
+    "han": 1.50018310546875,
+    "hann": 1.50018310546875,
+    "hanning": 1.50018310546875,
+    "nut": 1.9763500280946082,
+    "nutl": 1.9763500280946082,
+    "nuttall": 1.9763500280946082,
+    "ones": 1.0,
+    "par": 1.9174603174603191,
+    "parz": 1.9174603174603191,
+    "parzen": 1.9174603174603191,
+    "rect": 1.0,
+    "rectangular": 1.0,
+    "tri": 1.3331706523555851,
+    "triang": 1.3331706523555851,
+    "triangle": 1.3331706523555851,
+}
 
 
 @cache(level=10)
-def mel(sr, n_fft, n_mels=128, fmin=0.0, fmax=None, htk=False,
-        norm='slaney', dtype=np.float32):
+def mel(
+    sr,
+    n_fft,
+    n_mels=128,
+    fmin=0.0,
+    fmax=None,
+    htk=False,
+    norm="slaney",
+    dtype=np.float32,
+):
     """Create a Filterbank matrix to combine FFT bins into Mel-frequency bins
 
     Parameters
@@ -189,16 +201,24 @@ def mel(sr, n_fft, n_mels=128, fmin=0.0, fmax=None, htk=False,
         fmax = float(sr) / 2
 
     if norm == 1:
-        warnings.warn('norm=1 behavior will change in librosa 0.8.0. '
-                      "To maintain forward compatibility, use norm='slaney' instead.",
-                      FutureWarning)
+        warnings.warn(
+            "norm=1 behavior will change in librosa 0.8.0. "
+            "To maintain forward compatibility, use norm='slaney' instead.",
+            FutureWarning,
+        )
     elif norm == np.inf:
-        warnings.warn('norm=np.inf behavior will change in librosa 0.8.0. '
-                      "To maintain forward compatibility, use norm=None instead.",
-                      FutureWarning)
+        warnings.warn(
+            "norm=np.inf behavior will change in librosa 0.8.0. "
+            "To maintain forward compatibility, use norm=None instead.",
+            FutureWarning,
+        )
 
-    elif norm not in (None, 1, 'slaney', np.inf):
-        raise ParameterError("Unsupported norm={}, must be one of: None, 1, 'slaney', np.inf".format(repr(norm)))
+    elif norm not in (None, 1, "slaney", np.inf):
+        raise ParameterError(
+            "Unsupported norm={}, must be one of: None, 1, 'slaney', np.inf".format(
+                repr(norm)
+            )
+        )
 
     # Initialize the weights
     n_mels = int(n_mels)
@@ -216,31 +236,41 @@ def mel(sr, n_fft, n_mels=128, fmin=0.0, fmax=None, htk=False,
     for i in range(n_mels):
         # lower and upper slopes for all bins
         lower = -ramps[i] / fdiff[i]
-        upper = ramps[i+2] / fdiff[i+1]
+        upper = ramps[i + 2] / fdiff[i + 1]
 
         # .. then intersect them with each other and zero
         weights[i] = np.maximum(0, np.minimum(lower, upper))
 
-    if norm in (1, 'slaney'):
+    if norm in (1, "slaney"):
         # Slaney-style mel is scaled to be approx constant energy per channel
-        enorm = 2.0 / (mel_f[2:n_mels+2] - mel_f[:n_mels])
+        enorm = 2.0 / (mel_f[2 : n_mels + 2] - mel_f[:n_mels])
         weights *= enorm[:, np.newaxis]
-
 
     # Only check weights if f_mel[0] is positive
     if not np.all((mel_f[:-2] == 0) | (weights.max(axis=1) > 0)):
         # This means we have an empty channel somewhere
-        warnings.warn('Empty filters detected in mel frequency basis. '
-                      'Some channels will produce empty responses. '
-                      'Try increasing your sampling rate (and fmax) or '
-                      'reducing n_mels.')
+        warnings.warn(
+            "Empty filters detected in mel frequency basis. "
+            "Some channels will produce empty responses. "
+            "Try increasing your sampling rate (and fmax) or "
+            "reducing n_mels."
+        )
 
     return weights
 
 
 @cache(level=10)
-def chroma(sr, n_fft, n_chroma=12, tuning=0.0, ctroct=5.0,
-           octwidth=2, norm=2, base_c=True, dtype=np.float32):
+def chroma(
+    sr,
+    n_fft,
+    n_chroma=12,
+    tuning=0.0,
+    ctroct=5.0,
+    octwidth=2,
+    norm=2,
+    base_c=True,
+    dtype=np.float32,
+):
     """Create a Filterbank matrix to convert STFT to chroma
 
 
@@ -336,28 +366,27 @@ def chroma(sr, n_fft, n_chroma=12, tuning=0.0, ctroct=5.0,
     # Get the FFT bins, not counting the DC component
     frequencies = np.linspace(0, sr, n_fft, endpoint=False)[1:]
 
-    frqbins = n_chroma * hz_to_octs(frequencies,
-                                    tuning=tuning,
-                                    bins_per_octave=n_chroma)
+    frqbins = n_chroma * hz_to_octs(
+        frequencies, tuning=tuning, bins_per_octave=n_chroma
+    )
 
     # make up a value for the 0 Hz bin = 1.5 octaves below bin 1
     # (so chroma is 50% rotated from bin 1, and bin width is broad)
     frqbins = np.concatenate(([frqbins[0] - 1.5 * n_chroma], frqbins))
 
-    binwidthbins = np.concatenate((np.maximum(frqbins[1:] - frqbins[:-1],
-                                              1.0), [1]))
+    binwidthbins = np.concatenate((np.maximum(frqbins[1:] - frqbins[:-1], 1.0), [1]))
 
-    D = np.subtract.outer(frqbins, np.arange(0, n_chroma, dtype='d')).T
+    D = np.subtract.outer(frqbins, np.arange(0, n_chroma, dtype="d")).T
 
     n_chroma2 = np.round(float(n_chroma) / 2)
 
     # Project into range -n_chroma/2 .. n_chroma/2
     # add on fixed offset of 10*n_chroma to ensure all values passed to
     # rem are positive
-    D = np.remainder(D + n_chroma2 + 10*n_chroma, n_chroma) - n_chroma2
+    D = np.remainder(D + n_chroma2 + 10 * n_chroma, n_chroma) - n_chroma2
 
     # Gaussian bumps - 2*D to make them narrower
-    wts = np.exp(-0.5 * (2*D / np.tile(binwidthbins, (n_chroma, 1)))**2)
+    wts = np.exp(-0.5 * (2 * D / np.tile(binwidthbins, (n_chroma, 1))) ** 2)
 
     # normalize each column
     wts = util.normalize(wts, norm=norm, axis=0)
@@ -365,18 +394,19 @@ def chroma(sr, n_fft, n_chroma=12, tuning=0.0, ctroct=5.0,
     # Maybe apply scaling for fft bins
     if octwidth is not None:
         wts *= np.tile(
-            np.exp(-0.5 * (((frqbins/n_chroma - ctroct)/octwidth)**2)),
-            (n_chroma, 1))
+            np.exp(-0.5 * (((frqbins / n_chroma - ctroct) / octwidth) ** 2)),
+            (n_chroma, 1),
+        )
 
     if base_c:
         wts = np.roll(wts, -3, axis=0)
 
     # remove aliasing columns, copy to ensure row-contiguity
-    return np.ascontiguousarray(wts[:, :int(1 + n_fft/2)], dtype=dtype)
+    return np.ascontiguousarray(wts[:, : int(1 + n_fft / 2)], dtype=dtype)
 
 
 def __float_window(window_spec):
-    '''Decorator function for windows with fractional input.
+    """Decorator function for windows with fractional input.
 
     This function guarantees that for fractional `x`, the following hold:
 
@@ -384,17 +414,16 @@ def __float_window(window_spec):
     2. all values from `np.floor(x)` are set to 0.
 
     For integer-valued `x`, there should be no change in behavior.
-    '''
+    """
 
     def _wrap(n, *args, **kwargs):
-        '''The wrapped window'''
+        """The wrapped window"""
         n_min, n_max = int(np.floor(n)), int(np.ceil(n))
 
         window = get_window(window_spec, n_min)
 
         if len(window) < n_max:
-            window = np.pad(window, [(0, n_max - len(window))],
-                            mode='constant')
+            window = np.pad(window, [(0, n_max - len(window))], mode="constant")
 
         window[n_min:] = 0.0
 
@@ -404,10 +433,19 @@ def __float_window(window_spec):
 
 
 @cache(level=10)
-def constant_q(sr, fmin=None, n_bins=84, bins_per_octave=12, window='hann',
-               filter_scale=1, pad_fft=True, norm=1, dtype=np.complex64,
-               **kwargs):
-    r'''Construct a constant-Q basis.
+def constant_q(
+    sr,
+    fmin=None,
+    n_bins=84,
+    bins_per_octave=12,
+    window="hann",
+    filter_scale=1,
+    pad_fft=True,
+    norm=1,
+    dtype=np.complex64,
+    **kwargs
+):
+    r"""Construct a constant-Q basis.
 
     This uses the filter bank described by [1]_.
 
@@ -506,21 +544,24 @@ def constant_q(sr, fmin=None, n_bins=84, bins_per_octave=12, window='hann',
     >>> plt.title('CQ filter magnitudes (frequency domain)')
     >>> plt.tight_layout()
     >>> plt.show()
-    '''
+    """
 
     if fmin is None:
-        fmin = note_to_hz('C1')
+        fmin = note_to_hz("C1")
 
     # Pass-through parameters to get the filter lengths
-    lengths = constant_q_lengths(sr, fmin,
-                                 n_bins=n_bins,
-                                 bins_per_octave=bins_per_octave,
-                                 window=window,
-                                 filter_scale=filter_scale)
+    lengths = constant_q_lengths(
+        sr,
+        fmin,
+        n_bins=n_bins,
+        bins_per_octave=bins_per_octave,
+        window=window,
+        filter_scale=filter_scale,
+    )
 
     # Q should be capitalized here, so we suppress the name warning
     # pylint: disable=invalid-name
-    Q = float(filter_scale) / (2.0**(1. / bins_per_octave) - 1)
+    Q = float(filter_scale) / (2.0 ** (1.0 / bins_per_octave) - 1)
 
     # Convert lengths back to frequencies
     freqs = Q * sr / lengths
@@ -529,7 +570,9 @@ def constant_q(sr, fmin=None, n_bins=84, bins_per_octave=12, window='hann',
     filters = []
     for ilen, freq in zip(lengths, freqs):
         # Build the filter: note, length will be ceil(ilen)
-        sig = np.exp(np.arange(-ilen//2, ilen//2, dtype=float) * 1j * 2 * np.pi * freq / sr)
+        sig = np.exp(
+            np.arange(-ilen // 2, ilen // 2, dtype=float) * 1j * 2 * np.pi * freq / sr
+        )
 
         # Apply the windowing function
         sig = sig * __float_window(window)(len(sig))
@@ -542,20 +585,22 @@ def constant_q(sr, fmin=None, n_bins=84, bins_per_octave=12, window='hann',
     # Pad and stack
     max_len = max(lengths)
     if pad_fft:
-        max_len = int(2.0**(np.ceil(np.log2(max_len))))
+        max_len = int(2.0 ** (np.ceil(np.log2(max_len))))
     else:
         max_len = int(np.ceil(max_len))
 
-    filters = np.asarray([util.pad_center(filt, max_len, **kwargs)
-                          for filt in filters], dtype=dtype)
+    filters = np.asarray(
+        [util.pad_center(filt, max_len, **kwargs) for filt in filters], dtype=dtype
+    )
 
     return filters, np.asarray(lengths)
 
 
 @cache(level=10)
-def constant_q_lengths(sr, fmin, n_bins=84, bins_per_octave=12,
-                       window='hann', filter_scale=1):
-    r'''Return length of each filter in a constant-Q basis.
+def constant_q_lengths(
+    sr, fmin, n_bins=84, bins_per_octave=12, window="hann", filter_scale=1
+):
+    r"""Return length of each filter in a constant-Q basis.
 
     Parameters
     ----------
@@ -590,29 +635,29 @@ def constant_q_lengths(sr, fmin, n_bins=84, bins_per_octave=12,
     --------
     constant_q
     librosa.core.cqt
-    '''
+    """
 
     if fmin <= 0:
-        raise ParameterError('fmin must be positive')
+        raise ParameterError("fmin must be positive")
 
     if bins_per_octave <= 0:
-        raise ParameterError('bins_per_octave must be positive')
+        raise ParameterError("bins_per_octave must be positive")
 
     if filter_scale <= 0:
-        raise ParameterError('filter_scale must be positive')
+        raise ParameterError("filter_scale must be positive")
 
     if n_bins <= 0 or not isinstance(n_bins, int):
-        raise ParameterError('n_bins must be a positive integer')
+        raise ParameterError("n_bins must be a positive integer")
 
     # Q should be capitalized here, so we suppress the name warning
     # pylint: disable=invalid-name
-    Q = float(filter_scale) / (2.0**(1. / bins_per_octave) - 1)
+    Q = float(filter_scale) / (2.0 ** (1.0 / bins_per_octave) - 1)
 
     # Compute the frequencies
     freq = fmin * (2.0 ** (np.arange(n_bins, dtype=float) / bins_per_octave))
 
     if freq[-1] * (1 + 0.5 * window_bandwidth(window) / Q) > sr / 2.0:
-        raise ParameterError('Filter pass-band lies beyond Nyquist')
+        raise ParameterError("Filter pass-band lies beyond Nyquist")
 
     # Convert frequencies to filter lengths
     lengths = Q * sr / freq
@@ -621,9 +666,16 @@ def constant_q_lengths(sr, fmin, n_bins=84, bins_per_octave=12,
 
 
 @cache(level=10)
-def cq_to_chroma(n_input, bins_per_octave=12, n_chroma=12,
-                 fmin=None, window=None, base_c=True, dtype=np.float32):
-    '''Convert a Constant-Q basis to Chroma.
+def cq_to_chroma(
+    n_input,
+    bins_per_octave=12,
+    n_chroma=12,
+    fmin=None,
+    window=None,
+    base_c=True,
+    dtype=np.float32,
+):
+    """Convert a Constant-Q basis to Chroma.
 
 
     Parameters
@@ -698,24 +750,26 @@ def cq_to_chroma(n_input, bins_per_octave=12, n_chroma=12,
     >>> plt.tight_layout()
     >>> plt.show()
 
-    '''
+    """
 
     # How many fractional bins are we merging?
     n_merge = float(bins_per_octave) / n_chroma
 
     if fmin is None:
-        fmin = note_to_hz('C1')
+        fmin = note_to_hz("C1")
 
     if np.mod(n_merge, 1) != 0:
-        raise ParameterError('Incompatible CQ merge: '
-                             'input bins must be an '
-                             'integer multiple of output bins.')
+        raise ParameterError(
+            "Incompatible CQ merge: "
+            "input bins must be an "
+            "integer multiple of output bins."
+        )
 
     # Tile the identity to merge fractional bins
     cq_to_ch = np.repeat(np.eye(n_chroma), n_merge, axis=1)
 
     # Roll it left to center on the target bin
-    cq_to_ch = np.roll(cq_to_ch, - int(n_merge // 2), axis=1)
+    cq_to_ch = np.roll(cq_to_ch, -int(n_merge // 2), axis=1)
 
     # How many octaves are we repeating?
     n_octaves = np.ceil(np.float(n_input) / bins_per_octave)
@@ -736,22 +790,20 @@ def cq_to_chroma(n_input, bins_per_octave=12, n_chroma=12,
 
     # Adjust the roll in terms of how many chroma we want out
     # We need to be careful with rounding here
-    roll = int(np.round(roll * (n_chroma / 12.)))
+    roll = int(np.round(roll * (n_chroma / 12.0)))
 
     # Apply the roll
     cq_to_ch = np.roll(cq_to_ch, roll, axis=0).astype(dtype)
 
     if window is not None:
-        cq_to_ch = scipy.signal.convolve(cq_to_ch,
-                                         np.atleast_2d(window),
-                                         mode='same')
+        cq_to_ch = scipy.signal.convolve(cq_to_ch, np.atleast_2d(window), mode="same")
 
     return cq_to_ch
 
 
 @cache(level=10)
 def window_bandwidth(window, n=1000):
-    '''Get the equivalent noise bandwidth of a window function.
+    """Get the equivalent noise bandwidth of a window function.
 
 
     Parameters
@@ -779,23 +831,23 @@ def window_bandwidth(window, n=1000):
     See Also
     --------
     get_window
-    '''
+    """
 
-    if hasattr(window, '__name__'):
+    if hasattr(window, "__name__"):
         key = window.__name__
     else:
         key = window
 
     if key not in WINDOW_BANDWIDTHS:
         win = get_window(window, n)
-        WINDOW_BANDWIDTHS[key] = n * np.sum(win**2) / np.sum(np.abs(win))**2
+        WINDOW_BANDWIDTHS[key] = n * np.sum(win ** 2) / np.sum(np.abs(win)) ** 2
 
     return WINDOW_BANDWIDTHS[key]
 
 
 @cache(level=10)
 def get_window(window, Nx, fftbins=True):
-    '''Compute a window function.
+    """Compute a window function.
 
     This is a wrapper for `scipy.signal.get_window` that additionally
     supports callable or pre-computed windows.
@@ -839,11 +891,11 @@ def get_window(window, Nx, fftbins=True):
     ParameterError
         If `window` is supplied as a vector of length != `n_fft`,
         or is otherwise mis-specified.
-    '''
+    """
     if callable(window):
         return window(Nx)
 
-    elif (isinstance(window, (str, tuple)) or np.isscalar(window)):
+    elif isinstance(window, (str, tuple)) or np.isscalar(window):
         # TODO: if we add custom window functions in librosa, call them here
 
         return scipy.signal.get_window(window, Nx, fftbins=fftbins)
@@ -852,16 +904,24 @@ def get_window(window, Nx, fftbins=True):
         if len(window) == Nx:
             return np.asarray(window)
 
-        raise ParameterError('Window size mismatch: '
-                             '{:d} != {:d}'.format(len(window), Nx))
+        raise ParameterError(
+            "Window size mismatch: " "{:d} != {:d}".format(len(window), Nx)
+        )
     else:
-        raise ParameterError('Invalid window specification: {}'.format(window))
+        raise ParameterError("Invalid window specification: {}".format(window))
 
 
 @cache(level=10)
-def _multirate_fb(center_freqs=None, sample_rates=None, Q=25.0,
-                  passband_ripple=1, stopband_attenuation=50, ftype='ellip', flayout='sos'):
-    r'''Helper function to construct a multirate filterbank.
+def _multirate_fb(
+    center_freqs=None,
+    sample_rates=None,
+    Q=25.0,
+    passband_ripple=1,
+    stopband_attenuation=50,
+    ftype="ellip",
+    flayout="sos",
+):
+    r"""Helper function to construct a multirate filterbank.
 
      A filter bank consists of multiple band-pass filters which divide the input signal
      into subbands. In the case of a multirate filter bank, the band-pass filters
@@ -931,29 +991,45 @@ def _multirate_fb(center_freqs=None, sample_rates=None, Q=25.0,
         If `center_freqs` is `None`.
         If `sample_rates` is `None`.
         If `center_freqs.shape` does not match `sample_rates.shape`.
-    '''
+    """
 
     if center_freqs is None:
-        raise ParameterError('center_freqs must be provided.')
+        raise ParameterError("center_freqs must be provided.")
 
     if sample_rates is None:
-        raise ParameterError('sample_rates must be provided.')
+        raise ParameterError("sample_rates must be provided.")
 
     if center_freqs.shape != sample_rates.shape:
-        raise ParameterError('Number of provided center_freqs and sample_rates must be equal.')
+        raise ParameterError(
+            "Number of provided center_freqs and sample_rates must be equal."
+        )
 
     nyquist = 0.5 * sample_rates
     filter_bandwidths = center_freqs / float(Q)
 
     filterbank = []
 
-    for cur_center_freq, cur_nyquist, cur_bw in zip(center_freqs, nyquist, filter_bandwidths):
-        passband_freqs = [cur_center_freq - 0.5 * cur_bw, cur_center_freq + 0.5 * cur_bw] / cur_nyquist
-        stopband_freqs = [cur_center_freq - cur_bw, cur_center_freq + cur_bw] / cur_nyquist
+    for cur_center_freq, cur_nyquist, cur_bw in zip(
+        center_freqs, nyquist, filter_bandwidths
+    ):
+        passband_freqs = [
+            cur_center_freq - 0.5 * cur_bw,
+            cur_center_freq + 0.5 * cur_bw,
+        ] / cur_nyquist
+        stopband_freqs = [
+            cur_center_freq - cur_bw,
+            cur_center_freq + cur_bw,
+        ] / cur_nyquist
 
-        cur_filter = scipy.signal.iirdesign(passband_freqs, stopband_freqs,
-                                            passband_ripple, stopband_attenuation,
-                                            analog=False, ftype=ftype, output=flayout)
+        cur_filter = scipy.signal.iirdesign(
+            passband_freqs,
+            stopband_freqs,
+            passband_ripple,
+            stopband_attenuation,
+            analog=False,
+            ftype=ftype,
+            output=flayout,
+        )
 
         filterbank.append(cur_filter)
 
@@ -962,7 +1038,7 @@ def _multirate_fb(center_freqs=None, sample_rates=None, Q=25.0,
 
 @cache(level=10)
 def mr_frequencies(tuning):
-    r'''Helper function for generating center frequency and sample rate pairs.
+    r"""Helper function for generating center frequency and sample rate pairs.
 
     This function will return center frequency and corresponding sample rates
     to obtain similar pitch filterbank settings as described in [1]_.
@@ -997,19 +1073,23 @@ def mr_frequencies(tuning):
     --------
     librosa.filters.semitone_filterbank
     librosa.filters._multirate_fb
-    '''
+    """
 
     center_freqs = midi_to_hz(np.arange(24 + tuning, 109 + tuning))
 
-    sample_rates = np.asarray(len(np.arange(0, 36)) * [882, ] +
-                              len(np.arange(36, 70)) * [4410, ] +
-                              len(np.arange(70, 85)) * [22050, ])
+    sample_rates = np.asarray(
+        len(np.arange(0, 36)) * [882,]
+        + len(np.arange(36, 70)) * [4410,]
+        + len(np.arange(70, 85)) * [22050,]
+    )
 
     return center_freqs, sample_rates
 
 
-def semitone_filterbank(center_freqs=None, tuning=0.0, sample_rates=None, flayout='ba', **kwargs):
-    r'''Constructs a multirate filterbank of infinite-impulse response (IIR)
+def semitone_filterbank(
+    center_freqs=None, tuning=0.0, sample_rates=None, flayout="ba", **kwargs
+):
+    r"""Constructs a multirate filterbank of infinite-impulse response (IIR)
     band-pass filters at user-defined center frequencies and sample rates.
 
     By default, these center frequencies are set equal to the 88 fundamental
@@ -1086,31 +1166,39 @@ def semitone_filterbank(center_freqs=None, tuning=0.0, sample_rates=None, flayou
     >>> plt.ylabel('Magnitude (dB)')
     >>> plt.tight_layout()
     >>> plt.show()
-    '''
+    """
 
     if (center_freqs is None) and (sample_rates is None):
         center_freqs, sample_rates = mr_frequencies(tuning)
 
-    filterbank, fb_sample_rates = _multirate_fb(center_freqs=center_freqs, sample_rates=sample_rates,
-                                                flayout=flayout, **kwargs)
+    filterbank, fb_sample_rates = _multirate_fb(
+        center_freqs=center_freqs, sample_rates=sample_rates, flayout=flayout, **kwargs
+    )
 
     return filterbank, fb_sample_rates
 
 
 @jit(nopython=True, cache=True)
 def __window_ss_fill(x, win_sq, n_frames, hop_length):  # pragma: no cover
-    '''Helper function for window sum-square calculation.'''
+    """Helper function for window sum-square calculation."""
 
     n = len(x)
     n_fft = len(win_sq)
     for i in range(n_frames):
         sample = i * hop_length
-        x[sample:min(n, sample + n_fft)] += win_sq[:max(0, min(n_fft, n - sample))]
+        x[sample : min(n, sample + n_fft)] += win_sq[: max(0, min(n_fft, n - sample))]
 
 
-def window_sumsquare(window, n_frames, hop_length=512, win_length=None, n_fft=2048,
-                     dtype=np.float32, norm=None):
-    '''
+def window_sumsquare(
+    window,
+    n_frames,
+    hop_length=512,
+    win_length=None,
+    n_fft=2048,
+    dtype=np.float32,
+    norm=None,
+):
+    """
     Compute the sum-square envelope of a window function at a given hop length.
 
     This is used to estimate modulation effects induced by windowing observations
@@ -1165,7 +1253,7 @@ def window_sumsquare(window, n_frames, hop_length=512, win_length=None, n_fft=20
     >>> plt.tight_layout()
     >>> plt.show()
 
-    '''
+    """
     if win_length is None:
         win_length = n_fft
 
@@ -1174,7 +1262,7 @@ def window_sumsquare(window, n_frames, hop_length=512, win_length=None, n_fft=20
 
     # Compute the squared window at the desired length
     win_sq = get_window(window, win_length)
-    win_sq = util.normalize(win_sq, norm=norm)**2
+    win_sq = util.normalize(win_sq, norm=norm) ** 2
     win_sq = util.pad_center(win_sq, n_fft)
 
     # Fill the envelope
@@ -1185,7 +1273,7 @@ def window_sumsquare(window, n_frames, hop_length=512, win_length=None, n_fft=20
 
 @cache(level=10)
 def diagonal_filter(window, n, slope=1.0, angle=None, zero_mean=False):
-    '''Build a two-dimensional diagonal filter.
+    """Build a two-dimensional diagonal filter.
 
     This is primarily used for smoothing recurrence or self-similarity matrices.
 
@@ -1226,16 +1314,17 @@ def diagonal_filter(window, n, slope=1.0, angle=None, zero_mean=False):
     Notes
     -----
     This function caches at level 10.
-    '''
+    """
 
     if angle is None:
         angle = np.arctan(slope)
 
     win = np.diag(get_window(window, n, fftbins=False))
 
-    if not np.isclose(angle, np.pi/4):
-        win = scipy.ndimage.rotate(win, 45 - angle * 180 / np.pi,
-                                   order=5, prefilter=False)
+    if not np.isclose(angle, np.pi / 4):
+        win = scipy.ndimage.rotate(
+            win, 45 - angle * 180 / np.pi, order=5, prefilter=False
+        )
 
     np.clip(win, 0, None, out=win)
     win /= win.sum()

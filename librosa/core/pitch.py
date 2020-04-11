@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Pitch-tracking and tuning estimation'''
+"""Pitch-tracking and tuning estimation"""
 
 import warnings
 import numpy as np
@@ -10,12 +10,13 @@ from . import time_frequency
 from .._cache import cache
 from .. import util
 
-__all__ = ['estimate_tuning', 'pitch_tuning', 'piptrack']
+__all__ = ["estimate_tuning", "pitch_tuning", "piptrack"]
 
 
-def estimate_tuning(y=None, sr=22050, S=None, n_fft=2048,
-                    resolution=0.01, bins_per_octave=12, **kwargs):
-    '''Estimate the tuning of an audio time series or spectrogram input.
+def estimate_tuning(
+    y=None, sr=22050, S=None, n_fft=2048, resolution=0.01, bins_per_octave=12, **kwargs
+):
+    """Estimate the tuning of an audio time series or spectrogram input.
 
     Parameters
     ----------
@@ -75,7 +76,7 @@ def estimate_tuning(y=None, sr=22050, S=None, n_fft=2048,
     ...                         fmax=librosa.note_to_hz('G#9'))
     0.070000000000000062
 
-    '''
+    """
 
     pitch, mag = piptrack(y=y, sr=sr, S=S, n_fft=n_fft, **kwargs)
 
@@ -87,13 +88,15 @@ def estimate_tuning(y=None, sr=22050, S=None, n_fft=2048,
     else:
         threshold = 0.0
 
-    return pitch_tuning(pitch[(mag >= threshold) & pitch_mask],
-                        resolution=resolution,
-                        bins_per_octave=bins_per_octave)
+    return pitch_tuning(
+        pitch[(mag >= threshold) & pitch_mask],
+        resolution=resolution,
+        bins_per_octave=bins_per_octave,
+    )
 
 
 def pitch_tuning(frequencies, resolution=0.01, bins_per_octave=12):
-    '''Given a collection of pitches, estimate its tuning offset
+    """Given a collection of pitches, estimate its tuning offset
     (in fractions of a bin) relative to A440=440.0Hz.
 
     Parameters
@@ -134,7 +137,7 @@ def pitch_tuning(frequencies, resolution=0.01, bins_per_octave=12):
     >>> librosa.pitch_tuning(pitches)
     0.089999999999999969
 
-    '''
+    """
 
     frequencies = np.atleast_1d(frequencies)
 
@@ -142,19 +145,18 @@ def pitch_tuning(frequencies, resolution=0.01, bins_per_octave=12):
     frequencies = frequencies[frequencies > 0]
 
     if not np.any(frequencies):
-        warnings.warn('Trying to estimate tuning from empty frequency set.')
+        warnings.warn("Trying to estimate tuning from empty frequency set.")
         return 0.0
 
     # Compute the residual relative to the number of bins
-    residual = np.mod(bins_per_octave *
-                      time_frequency.hz_to_octs(frequencies), 1.0)
+    residual = np.mod(bins_per_octave * time_frequency.hz_to_octs(frequencies), 1.0)
 
     # Are we on the wrong side of the semitone?
     # A residual of 0.95 is more likely to be a deviation of -0.05
     # from the next tone up.
     residual[residual >= 0.5] -= 1.0
 
-    bins = np.linspace(-0.5, 0.5, int(np.ceil(1. / resolution)) + 1)
+    bins = np.linspace(-0.5, 0.5, int(np.ceil(1.0 / resolution)) + 1)
 
     counts, tuning = np.histogram(residual, bins)
 
@@ -163,11 +165,22 @@ def pitch_tuning(frequencies, resolution=0.01, bins_per_octave=12):
 
 
 @cache(level=30)
-def piptrack(y=None, sr=22050, S=None, n_fft=2048, hop_length=None,
-             fmin=150.0, fmax=4000.0, threshold=0.1,
-             win_length=None, window='hann', center=True, pad_mode='reflect',
-             ref=None):
-    '''Pitch tracking on thresholded parabolically-interpolated STFT.
+def piptrack(
+    y=None,
+    sr=22050,
+    S=None,
+    n_fft=2048,
+    hop_length=None,
+    fmin=150.0,
+    fmax=4000.0,
+    threshold=0.1,
+    win_length=None,
+    window="hann",
+    center=True,
+    pad_mode="reflect",
+    ref=None,
+):
+    """Pitch tracking on thresholded parabolically-interpolated STFT.
 
     This implementation uses the parabolic interpolation method described by [1]_.
 
@@ -275,12 +288,19 @@ def piptrack(y=None, sr=22050, S=None, n_fft=2048, hop_length=None,
     >>> pitches, magnitudes = librosa.piptrack(S=S, sr=sr, threshold=1,
     ...                                        ref=np.mean)
 
-    '''
+    """
 
     # Check that we received an audio time series or STFT
-    S, n_fft = _spectrogram(y=y, S=S, n_fft=n_fft, hop_length=hop_length,
-                            win_length=win_length, window=window,
-                            center=center, pad_mode=pad_mode)
+    S, n_fft = _spectrogram(
+        y=y,
+        S=S,
+        n_fft=n_fft,
+        hop_length=hop_length,
+        win_length=win_length,
+        window=window,
+        center=center,
+        pad_mode=pad_mode,
+    )
 
     # Make sure we're dealing with magnitudes
     S = np.abs(S)
@@ -303,8 +323,8 @@ def piptrack(y=None, sr=22050, S=None, n_fft=2048, hop_length=None,
     shift = avg / (shift + (np.abs(shift) < util.tiny(shift)))
 
     # Pad back up to the same shape as S
-    avg = np.pad(avg, ([1, 1], [0, 0]), mode='constant')
-    shift = np.pad(shift, ([1, 1], [0, 0]), mode='constant')
+    avg = np.pad(avg, ([1, 1], [0, 0]), mode="constant")
+    shift = np.pad(shift, ([1, 1], [0, 0]), mode="constant")
 
     dskew = 0.5 * avg * shift
 
@@ -328,10 +348,10 @@ def piptrack(y=None, sr=22050, S=None, n_fft=2048, hop_length=None,
     idx = np.argwhere(freq_mask & util.localmax(S * (S > ref_value)))
 
     # Store pitch and magnitude
-    pitches[idx[:, 0], idx[:, 1]] = ((idx[:, 0] + shift[idx[:, 0], idx[:, 1]])
-                                     * float(sr) / n_fft)
+    pitches[idx[:, 0], idx[:, 1]] = (
+        (idx[:, 0] + shift[idx[:, 0], idx[:, 1]]) * float(sr) / n_fft
+    )
 
-    mags[idx[:, 0], idx[:, 1]] = (S[idx[:, 0], idx[:, 1]]
-                                  + dskew[idx[:, 0], idx[:, 1]])
+    mags[idx[:, 0], idx[:, 1]] = S[idx[:, 0], idx[:, 1]] + dskew[idx[:, 0], idx[:, 1]]
 
     return pitches, mags

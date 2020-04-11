@@ -73,4 +73,4 @@ from ._nnls import *  # pylint: disable=wildcard-import
 from . import decorators
 from . import exceptions
 
-__all__ = [_ for _ in dir() if not _.startswith('_')]
+__all__ = [_ for _ in dir() if not _.startswith("_")]
