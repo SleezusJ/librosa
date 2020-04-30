@@ -30,11 +30,11 @@ jobs:
         # Python dependencies
         python3 -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Format with Python Black
-      run: |
-        pip install black
-        # Show the diff of formatting with black without actually running it.
-        black . --check 
+#    - name: Format with Python Black
+#      run: |
+#        pip install black
+#        # Show the diff of formatting with black without actually running it.
+#        black . --check
 #    - name: Lint with flake8
 #      run: |
 #        pip install flake8
