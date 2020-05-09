@@ -136,7 +136,7 @@ def __get_files(dir_name: pathlib.Path, extensions: set, recur: bool):
     """Helper function to get files in a single directory"""
 
     # Expand out the directory
-    dir_name = pathlib.Path.absolute(dir_name)
+    dir_name = dir_name.absolute()
 
     my_files = set()
 
