@@ -136,16 +136,16 @@ def __get_files(dir_name: pathlib.Path, extensions: set, recur: bool):
     """Helper function to get files in a single directory"""
 
     # Expand out the directory
-    dir_name = dir_name.absolute()
+    dir_name = dir_name.expanduser().absolute()
 
     my_files = set()
 
     if recur:
         for sub_ext in extensions:
-            my_files |= set(dir_name.rglob(sub_ext))
+            my_files |= set(dir_name.rglob("*." + sub_ext))
 
     else:
         for sub_ext in extensions:
-            my_files |= set(dir_name.glob(sub_ext))
+            my_files |= set(dir_name.glob("*." + sub_ext))
 
     return my_files
