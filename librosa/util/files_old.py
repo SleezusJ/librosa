@@ -9,6 +9,7 @@ import pathlib
 
 EXAMPLE_AUDIO = "example_data/Kevin_MacLeod_-_Vibe_Ace.ogg"
 
+
 __all__ = ["example_audio_file", "find_files"]
 
 
@@ -16,7 +17,7 @@ def example_audio_file():
     """Get the path to an included audio example file.
 
     .. raw:: html
-
+       
        <div xmlns:cc="http://creativecommons.org/ns#"
           xmlns:dct="http://purl.org/dc/terms/"
              about="http://freemusicarchive.org/music/Kevin_MacLeod/Jazz_Sampler/Vibe_Ace_1278">
@@ -42,7 +43,7 @@ def example_audio_file():
 
 
 def find_files(
-        directory, ext=None, recurse=True, case_sensitive=False, limit=None, offset=0
+    directory, ext=None, recurse=True, case_sensitive=False, limit=None, offset=0
 ):
     """Get a sorted list of (audio) files in a directory or directory sub-tree.
 
@@ -98,7 +99,6 @@ def find_files(
     files : list of str
         The list of audio files.
     """
-    directory = pathlib.Path(directory)
 
     if ext is None:
         ext = ["aac", "au", "flac", "m4a", "mp3", "ogg", "wav"]
@@ -119,9 +119,10 @@ def find_files(
     files = set()
 
     if recurse:
-        files = __get_files(directory, ext, True)
+        for walk in os.walk(directory):
+            files |= __get_files(walk[0], ext)
     else:
-        files = __get_files(directory, ext, False)
+        files = __get_files(directory, ext)
 
     files = list(files)
     files.sort()
@@ -132,20 +133,16 @@ def find_files(
     return files
 
 
-def __get_files(dir_name: pathlib.Path, extensions: set, recur: bool):
+def __get_files(dir_name, extensions):
     """Helper function to get files in a single directory"""
 
     # Expand out the directory
-    dir_name = pathlib.Path.absolute(dir_name)
+    dir_name = os.path.abspath(os.path.expanduser(dir_name))
 
-    my_files = set()
+    myfiles = set()
 
-    if recur:
-        for sub_ext in extensions:
-            my_files |= set(dir_name.rglob(sub_ext))
+    for sub_ext in extensions:
+        globstr = os.path.join(dir_name, "*" + os.path.extsep + sub_ext)
+        myfiles |= set(glob.glob(globstr))
 
-    else:
-        for sub_ext in extensions:
-            my_files |= set(dir_name.glob(sub_ext))
-
-    return my_files
+    return myfiles
