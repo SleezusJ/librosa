@@ -2,8 +2,6 @@
 # -*- coding: utf-8 -*-
 """Utility functions for dealing with files"""
 
-import os
-import glob
 import pkg_resources
 import pathlib
 

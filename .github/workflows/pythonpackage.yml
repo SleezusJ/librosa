@@ -34,7 +34,6 @@ jobs:
     - name: Format with Python Black
       run: |
         pip install black
-        # Show the diff of formatting with black without actually running it.
         black ./librosa
 #     - name: Lint with flake8
 #      run: |
